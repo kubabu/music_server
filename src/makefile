@@ -21,11 +21,17 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 _SERVER_OBJ = main.o
 SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
 
+_CLIENT_OBJ = client.o
+CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
 
-$(ODIR)/%.o: %.c $(DEPS)
+## $(DEPS)
+$(ODIR)/%.o: %.c
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 server: $(SERVER_OBJ)
+	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
+
+client: $(CLIENT_OBJ)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
 
 .PHONY: clean

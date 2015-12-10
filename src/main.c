@@ -54,6 +54,7 @@ status_t status = {
     .port=SERV_DEF_PORT
 };
 
+void *cthread(void *arg);
 
 struct cln {
     int cfd;
@@ -93,6 +94,7 @@ void safe_exit(int sig)
         if(status.c){
             free(status.c);
         }
+//        pthread_join(cthread, NULL);
         printf("\r[%s] Closing now \n", time_printable(status.timer_buffer));
         exit(EXIT_SUCCESS);
     }
@@ -128,10 +130,8 @@ char *get_eth0_ip(char *buff)
 void *cthread(void *arg)
 {
     struct cln *c = (struct cln *)arg;
-    printf("[Accepted] Request from IP %s port %d, %s\n",
-        inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port,
-        time_printable(status.timer_buffer)
-    );
+//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(status.timer_buffer) );
+    printf("[Accepted] Request: %s\n", time_printable(status.timer_buffer) );
     write(c->cfd, "Kuba Buda 119507", 16);
 
     close(c->cfd);
@@ -211,6 +211,7 @@ int main(int argc, char *argv[])
 
     status.verbose = 1;
     play_path(MUSIC_PATH);
+
     while(1) {
 
         struct cln *c = malloc(sizeof(struct cln));
@@ -225,6 +226,7 @@ int main(int argc, char *argv[])
         }
         pthread_create(&tid, NULL, cthread, c);
         pthread_detach(tid);
+
     }
     close(sfd);
 
