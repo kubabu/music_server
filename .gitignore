@@ -1,3 +1,4 @@
+*.o
 mp3s/*
 lib/libao*
 lib/mpg123*
