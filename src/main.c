@@ -19,9 +19,9 @@
 #define LIBPATH         "../lib/bin/"
 
 #ifdef SYSTEM_MPG123_INSTALL
-  #define PLAYER_PATH     "/usr/bin/mpg123"
+  #define PLAYER_PATH     "/usr/bin/mpg123p"
 #else
-  #define PLAYER_PATH     LIBPATH"mpg123"
+  #define PLAYER_PATH     LIBPATH"mpg123p"
 #endif
 #define MUSIC_ROOT      "../mp3s/"
 #define MUSIC_SAMPLE    "Tracy.mp3"

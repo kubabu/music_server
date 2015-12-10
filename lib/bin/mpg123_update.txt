@@ -1,4 +1,5 @@
-/* mpg123 used here is slightyl modified by replacing ../src/term.c:term_init with following */
+/* mpg123 used here is slightly modified to work with pipes, 
+ * by replacing ../src/term.c:term_init with following */
 
 /* initialze terminal */
 void term_init(void)
