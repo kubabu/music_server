@@ -1,0 +1,34 @@
+IDIR =../include
+CC=gcc
+CFLAGS=-Wall -I$(IDIR)
+LDFLAGS=
+
+ODIR=obj
+LDIR =../lib
+
+LIBINCLUDE=../lib/
+LIBBIN=../lib/
+LIBS=-pthread
+
+CFLAGS+=-I$(LIBINCLUDE)
+LDFLAGS+=-L$(LIBBIN)
+
+BINDIR=../bin
+
+_DEPS = controls.h
+DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+
+_SERVER_OBJ = main.o
+SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
+
+
+$(ODIR)/%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+server: $(SERVER_OBJ)
+	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
+
+.PHONY: clean
+
+clean:
+	rm -f $(ODIR)/*.o *~ $(INCDIR)/*~ $(BINDIR)/* 

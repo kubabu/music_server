@@ -1,0 +1,16 @@
+/* mpg123 used here is slightyl modified by replacing ../src/term.c:term_init with following */
+
+/* initialze terminal */
+void term_init(void)
+{
+    debug("term_init");
+
+    term_enable = 1;
+
+    if((tcgetattr(0,&old_tio) < 0) | (term_setup(&old_tio) < 0)) {
+       fprintf(stderr,"Possibly problematic terminal attributes\n");
+    }
+}
+
+/* Then build it (./configure && make), and use /src/.libs/mpg123
+/* libasound2 might be necessary

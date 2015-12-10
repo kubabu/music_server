@@ -1,0 +1,55 @@
+CFLAGS=-g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG $(OPTFLAGS)
+CC=gcc
+
+LIBOBJECTS=$(LIBSOURCES: .c=.o)
+
+LIBS=-ldl $(OPTLIBS)
+PREFIX?=/usr/local
+
+##SOURCES=$(wildcard *.c */*.c)
+SOURCES=$(wildcard *.c)
+HEADERS=$(wildcard *.h)
+OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+TARGETS=$(patsubst %.c,%.elf,$(SOURCES))
+FILES=$(patsubst %.c,%,$(SOURCES))
+
+TEST_SRC=$(wildcard tests/*_tests.c)
+TESTS=$(patsubst %.c,%,$(TEST_SRC))
+
+BINARIES=main
+
+# The Target Build
+CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
+LDFLAGS = -Wl,-Map,$(TARGET).map
+
+## Explicit pattern rules:
+main:
+	$(CC) $(CFLAGS) -pthread -o main main.c
+
+##  To make .o files from .c files
+##%.o: %.c $(HEADERS) Makefile
+%.o: %.c
+	$(CC) $(CFLAGS) -pthread -c -o  $@ $(patsubst %.o, %.c, $(@))
+
+%.elf: %.o
+	$(CC) $(LDFLAGS) $^ -o $(@)
+
+%.lst: %.elf
+	$(OBJDUMP) -S $< > $@
+
+## These targets don't have files named after them
+.PHONY: all disassemble disasm disas clean squeaky_clean
+
+all:$(TARGETS)
+
+disassemble: $(TARGET).lst
+
+disasm: disassemble
+disas: disassemble
+
+clean:
+	rm -f *.elf *.obj *.o *.d *.lst *.lss *.sym *.map $(OBJECTS) $(BINARIES)
+
+squeaky_clean:
+	rm -f *.elf *.obj *.o *.d *.lst *.lss *.sym *.map ~
+
