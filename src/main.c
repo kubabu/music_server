@@ -168,6 +168,7 @@ int play_path(char *path)
 
 int main(int argc, char *argv[])
 {
+
     signal(SIGQUIT, &safe_exit);
     signal(SIGINT, &safe_exit);
 
@@ -178,7 +179,6 @@ int main(int argc, char *argv[])
     pthread_t tid;
     socklen_t l;
     struct sockaddr_in myaddr, clientaddr;
-
 
     if((sfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Failed to open socket");
@@ -232,5 +232,6 @@ int main(int argc, char *argv[])
     if(kill(status.mp3_pid, SIGKILL)) {
         perror("Closing mp3 player");
     }
+
     return 0;
 }
