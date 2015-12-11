@@ -26,3 +26,9 @@
 /* #define MPG123_FAST_FORWARD_KEY '>' */
 /* #define MPG123_FINE_REWIND_KEY ';' */
 /* #define MPG123_FINE_FORWARD_KEY ':' */
+
+//Serious business
+#define PASS_LENGTH 5
+#define PASS "root"
+
+#define COMMAND_MAX_LEN 512
