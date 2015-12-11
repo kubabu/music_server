@@ -14,6 +14,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "controls.h"
+
 
 #undef SYSTEM_MPG123_INSTALL
 #define LIBPATH         "../lib/bin/"
@@ -131,9 +133,18 @@ void *cthread(void *arg)
 {
     struct cln *c = (struct cln *)arg;
 //    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(status.timer_buffer) );
+    char pass_buf[PASS_LENGTH];
+    int n = 0;
+    n = read(c->cfd, &pass_buf, PASS_LENGTH);
+    if((n != PASS_LENGTH) || (strcmp(PASS, pass_buf))) {
+        printf("Client authentication failed");
+        goto end_connection;
+    }
+
     printf("[Accepted] Request: %s\n", time_printable(status.timer_buffer) );
     write(c->cfd, "Kuba Buda 119507", 16);
 
+end_connection:
     close(c->cfd);
     free(c);
 

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
+#include "controls.h"
 /* This client is intended only for testing server functionalities
  */
 
@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
         perror("Problem with connecting to server");
         return 1;
     }
+    n = write(fd, PASS, PASS_LENGTH);
 
     n = read(fd, buf, 128);
     if(n < 0) {
