@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "controls.h"
+#include "utils.h"
 /* This client is intended only for testing server functionalities
  */
 

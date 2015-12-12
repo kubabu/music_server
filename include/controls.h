@@ -1,5 +1,20 @@
 /* */
+#define MPLAYER_CMD_MODE 0
+#define MPLAYER_COMMAND  1
 
+#define MPLAYER_MODE_SET 's'
+#define MPLAYER_MODE_LIST 'l'
+#define MPLAYER_MODE_PLAY 'p'
+
+#define MPLAYER_PLAY_PODCAST 'p'
+#define MPLAYER_PLAY_LOCAL  'l'
+
+#define MPLAYER_SET_PAUSE 'p'
+#define MPLAYER_SET_STOP 's'
+#define MPLAYER_SET_VOL_UP '+'
+#define MPLAYER_SET_VOL_DOWN '-'
+#define MPLAYER_SET_FORWARD '>'
+#define MPLAYER_SET_REWIND '<'
 
 /* Commands for backends */
 /* MPG123, straight from its source  */
@@ -37,4 +52,3 @@
 #define PASS_LENGTH 5
 #define PASS 'root'
 
-#define COMMAND_MAX_LEN 512

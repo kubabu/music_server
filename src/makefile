@@ -15,10 +15,10 @@ LDFLAGS+=-L$(LIBBIN)
 
 BINDIR=../bin
 
-_DEPS = controls.h
+_DEPS = controls.h mplayer.h utils.h 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_SERVER_OBJ = main.o
+_SERVER_OBJ = main.o mplayer.o utils.o
 SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
 
 _CLIENT_OBJ = client.o
