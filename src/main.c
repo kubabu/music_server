@@ -92,16 +92,23 @@ void *cthread(void *arg)
     char cmd_buf[COMMAND_MAX_LEN];
     int i, j, connect;
 
-    strncpy(valid_pass, "PASS", PASS_LENGTH);
+    memset(pass_buf, '\0', PASS_LENGTH);
+    memset(valid_pass, '\0', PASS_LENGTH);
+    strncpy(valid_pass, "PASS\0", PASS_LENGTH);
+
     i = read(c->cfd, &pass_buf, PASS_LENGTH);
 
-    if((i != PASS_LENGTH) || (strcmp(valid_pass, pass_buf))) {
-        printf("Client authentication failed: got %s expected %s\n",
-                pass_buf, valid_pass);
+    if((strcmp(valid_pass, pass_buf))/* || (i != PASS_LENGTH) */) {
+        printf("Client authentication failed: got %s [%d] expected %s [%d]\n",
+                pass_buf, i, valid_pass, PASS_LENGTH);
+        for(i=0; i < PASS_LENGTH; ++i) {
+            printf("[%d] %c{%d} -  %c{%d}\n", i, pass_buf[i], pass_buf[i], valid_pass[i], valid_pass[i]);
+        }
         goto con_end;
     }
 
-    printf("[%s] Accepted client\n", time_printable(st.tmr_buf) );
+    time_printable(st.tmr_buf);
+    printf("[%s] Accepted client\n", st.tmr_buf);
     connect = 1;
 //    write(c->cfd, "Kuba Buda 119507", 16);
      do {
@@ -110,22 +117,32 @@ void *cthread(void *arg)
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
         for(i = 0; i < COMMAND_MAX_LEN; i += j) {
             j = read(c->cfd, &cmd_buf[i], 1);
-            printf("[%d] %c=%d\n", i, cmd_buf[i], cmd_buf[i]);
+
+            switch(i){
+            case 0:
+                break;
+            case 1:
+                printf("[%d] %c=%d\n", 0, cmd_buf[0], cmd_buf[0]);
+            default:
+                printf("[%d] %c=%d\n", i, cmd_buf[i], cmd_buf[i]);
+                break;
+            }
             switch(cmd_buf[i]) {
                 case EOF:
                     connect = 0;
                 case '\0':
+                case '\r':
                 case '\n':
                     goto cmd_parse;
                 }
         }
     cmd_parse:
-        j = 0;
         //parse command
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
 
             default:
-                printf("[%s] Got invalid command\n", time_printable(st.tmr_buf));
+                if(j) {
+                    printf("[%s] Got invalid command\n", time_printable(st.tmr_buf));           }
         }
     } while(connect);
 
