@@ -143,22 +143,42 @@ void *cthread(void *arg)
     struct cln *c = (struct cln *)arg;
 //    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(st.tmr_buf) );
     char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
-    char cmd[COMMAND_MAX_LEN];
-    int n = 0;
+    char cmd_buf[COMMAND_MAX_LEN];
+    int i, j, connect;
 
     strncpy(valid_pass, "PASS", PASS_LENGTH);
-    n = read(c->cfd, &pass_buf, PASS_LENGTH);
+    i = read(c->cfd, &pass_buf, PASS_LENGTH);
 
-    if((n != PASS_LENGTH) || (strcmp(valid_pass, pass_buf))) {
-        printf("Client authentication failed: got %s expected %s\n", 
+    if((i != PASS_LENGTH) || (strcmp(valid_pass, pass_buf))) {
+        printf("Client authentication failed: got %s expected %s\n",
                 pass_buf, valid_pass);
-        goto end_connection;
+        goto con_end;
     }
 
-    printf("[Accepted] Request: %s\n", time_printable(st.tmr_buf) );
+    printf("[%s] Accepted client\n", time_printable(st.tmr_buf) );
+    connect = 1;
 //    write(c->cfd, "Kuba Buda 119507", 16);
-
-end_connection:
+     do {
+        // listen for client commands
+        j = 0;
+        memset(cmd_buf, '\0', COMMAND_MAX_LEN);
+        for(i = 0; i < COMMAND_MAX_LEN; i += j) {
+            j = read(c->cfd, &cmd_buf[i], 1);
+            printf("[%d] %c=%d\n", i, cmd_buf[i], cmd_buf[i]);
+            switch(cmd_buf[i]) {
+                case EOF:
+                    connect = 0;
+                case '\0':
+                case '\n':
+                    goto cmd_parse;
+                }
+        }
+    cmd_parse:
+        j = 0;
+        //parse command
+    } while(connect);
+con_end:
+    printf("[%s] Client disconnected \n", time_printable(st.tmr_buf) );
     close(c->cfd);
     free(c);
 

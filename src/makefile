@@ -51,4 +51,4 @@ test_server_with_valgrind: server
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server
 
 test_run_client: client
-	$(BINDIR)/client localhost 1234
+	valgrind $(BINDIR)/client localhost 1234

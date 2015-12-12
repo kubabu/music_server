@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -12,12 +13,37 @@
 /* This client is intended only for testing server functionalities
  */
 
+void print_cmd_buf(char *buf, size_t n)
+{
+    assert(n < COMMAND_MAX_LEN);
+    /* make sure string is properly terminated */
+    if(n < COMMAND_MAX_LEN) {
+        buf[n] = '\0';
+    } else {
+        buf[COMMAND_MAX_LEN - 1] = '\0';
+    }
+    write(1, buf, n);
+    /* be sure to add new line */
+    if((n > 0) && (buf[n - 1] != '\n')) {
+        printf("\n");
+    }
+}
+
+void conn_close(int conn_fd)
+{
+    char cmd[1];
+    cmd[0] = EOF;
+    write(conn_fd, cmd, 1);
+}
+
 int main(int argc, char *argv[])
 {
     int fd, con, n, port;
-    char buf[128];
+    char cmd_buf[COMMAND_MAX_LEN];
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
+
+    memset(cmd_buf, '\0', COMMAND_MAX_LEN);
 
     if(argc < 3) {
         printf("USE %s [IP_ADDR] [PORT]\n", argv[0]);
@@ -38,6 +64,7 @@ int main(int argc, char *argv[])
 
     serv_addr.sin_family = PF_INET;
     serv_addr.sin_port = htons(port);
+
     memcpy(&serv_addr.sin_addr.s_addr, host_addr->h_addr, host_addr->h_length);
 
 
@@ -47,19 +74,23 @@ int main(int argc, char *argv[])
         return 1;
     }
     n = write(fd, "PASS", PASS_LENGTH);
-
-    n = read(fd, buf, 128);
+    if(n != PASS_LENGTH) {
+        perror("Problem with authentication to server");
+    }
+/*
+    n = read(fd, cmd_buf, COMMAND_MAX_LEN);
     if(n < 0) {
         puts("Problem with reading from server");
         return 1;
     }
-
-    buf[n] = '\0';
-    write(1, buf, n);
-    if(buf[n - 1] != '\n') {
-        printf("\n");
+    print_cmd_buf(cmd_buf, n);
+*/
+    memcpy(cmd_buf, "PASS", PASS_LENGTH);
+    for(n=0; n < PASS_LENGTH; n++) {
+        write(fd, cmd_buf+n, 1);
+        printf("[%d] %c=%d\n", n, cmd_buf[n], cmd_buf[n]);
     }
-
+    conn_close(fd);
     close(fd);
 
 
