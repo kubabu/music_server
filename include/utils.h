@@ -22,4 +22,6 @@ char *time_printable(char timer_buffer[TIME_BUFLEN]);
 
 char *get_eth0_ip(char *buff);
 
+void dump_incoming_buffer(int cfd, int ofd);
+
 #endif

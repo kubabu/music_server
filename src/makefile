@@ -1,5 +1,5 @@
-IDIR =../include
 CC=gcc
+IDIR =../include
 CFLAGS=-Wall -I$(IDIR)
 LDFLAGS= ##-static
 
@@ -21,7 +21,7 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 _SERVER_OBJ = main.o mplayer.o utils.o
 SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
 
-_CLIENT_OBJ = client.o
+_CLIENT_OBJ = client.o utils.o
 CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
 
 

@@ -18,6 +18,9 @@
 
 int conn_fd;
 
+
+//extern void dump_incoming_buffer(int cfd, int ofd);
+
 void print_cmd_buf(char *buf, size_t n)
 {
     assert(n < COMMAND_MAX_LEN);
@@ -107,10 +110,14 @@ int main(int argc, char *argv[])
     }
 */
     conn_fd = fd;
-    dup2(fd, STDOUT_FILENO);
+//    dup2(fd, STDOUT_FILENO);
+//    dup2(fd, STDOUT_FILENO);
+    dump_incoming_buffer(fd, STDOUT_FILENO);
 
+    printf("REPL mode\n> ");
     while(read(STDIN_FILENO, cmd_buf, 1)) {
         write(fd, cmd_buf, 1);
+        dump_incoming_buffer(fd, STDOUT_FILENO);
     }
     conn_close(fd);
     close(fd);

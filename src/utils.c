@@ -45,4 +45,18 @@ char *get_eth0_ip(char *buff)
     return buff;
 }
 
+void dump_incoming_buffer(int cfd, int ofd){
+    int printed = 0;
+    int n = 0;
+    char buf[1];
+    while((n = read(cfd, buf, 1))) {
+        if(!printed) {
+            write(ofd, "[remote] ", 10);
+            printed = 1;
+        }
+        write(ofd, buf, 1);
+        // n = ?
+    }
+}
+
 
