@@ -5,14 +5,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "controls.h"
+#include "dbg.h"
 #include "utils.h"
-/* This client is intended only for testing server functionalities
- */
+
+/* This client is intended only for server testing */
+
+int conn_fd;
 
 void print_cmd_buf(char *buf, size_t n)
 {
@@ -37,6 +41,14 @@ void conn_close(int conn_fd)
     write(conn_fd, cmd, 1);
 }
 
+void safe_exit(int sig)
+{
+    conn_close(conn_fd);
+    close(conn_fd);
+    printf("\rClosing test client...\n");
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[])
 {
     int fd, con, n, port;
@@ -44,6 +56,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
 
+    signal(SIGINT, safe_exit);
+    signal(SIGQUIT, safe_exit);
     memset(cmd_buf, '\0', COMMAND_MAX_LEN);
 
     if(argc < 3) {
@@ -85,15 +99,21 @@ int main(int argc, char *argv[])
         return 1;
     }
     print_cmd_buf(cmd_buf, n);
-*/
+
     memcpy(cmd_buf, "PASS", PASS_LENGTH);
     for(n=0; n < PASS_LENGTH; n++) {
         write(fd, cmd_buf+n, 1);
         printf("[%d] %c=%d\n", n, cmd_buf[n], cmd_buf[n]);
     }
+*/
+    conn_fd = fd;
+    dup2(fd, STDOUT_FILENO);
+
+    while(read(STDIN_FILENO, cmd_buf, 1)) {
+        write(fd, cmd_buf, 1);
+    }
     conn_close(fd);
     close(fd);
-
 
     return 0;
 }

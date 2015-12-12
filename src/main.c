@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <wait.h>
 
@@ -46,6 +45,7 @@ void safe_exit(int sig)
     switch(sig) {
     case SIGQUIT:
     case SIGINT:
+        printf("\rGot signal %d\n", sig);
     default:
         close_mp3(&st.mp3_pid);
         if(st.c){
@@ -55,33 +55,6 @@ void safe_exit(int sig)
         printf("\r[%s] Closing now \n", time_printable(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
-}
-
-char *get_eth0_ip(char *buff)
-{
-    char c;
-    int n, p[2];
-    pipe(p);
-
-    if(!fork()){
-        close(p[0]);
-        dup2(p[1], STDOUT_FILENO);
-         /* soo portable */
-        system("/sbin/ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
-        close(p[1]);
-        exit(EXIT_SUCCESS);
-    } else {
-        close(p[1]);
-        n = 0;
-        while(read(p[0], &c, 1) & (n + 1 < IP_BUFLEN)) {
-            if(isalnum(c) | ispunct(c)) {
-                buff[n++] = c;
-            }
-        }
-        close(p[0]);
-        buff[n] = '\0';
-    }
-    return buff;
 }
 
 void *cthread(void *arg)
@@ -98,7 +71,7 @@ void *cthread(void *arg)
 
     i = read(c->cfd, &pass_buf, PASS_LENGTH);
 
-    if((strcmp(valid_pass, pass_buf))/* || (i != PASS_LENGTH) */) {
+    if((memcmp(valid_pass, pass_buf, PASS_LENGTH - 1))/* || (i != PASS_LENGTH) */) {
         printf("Client authentication failed: got %s [%d] expected %s [%d]\n",
                 pass_buf, i, valid_pass, PASS_LENGTH);
         for(i=0; i < PASS_LENGTH; ++i) {
@@ -110,6 +83,8 @@ void *cthread(void *arg)
     time_printable(st.tmr_buf);
     printf("[%s] Accepted client\n", st.tmr_buf);
     connect = 1;
+    write(c->cfd, "Client accepted\n", 17);
+    // send JSON with mp3 root
 //    write(c->cfd, "Kuba Buda 119507", 16);
      do {
         // listen for client commands
@@ -139,6 +114,11 @@ void *cthread(void *arg)
     cmd_parse:
         //parse command
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
+            case 'e':
+                if(memcmp(cmd_buf, "exit", 4) == 0) {
+                    write(c->cfd, "SERVER EXIT\n", 13);
+                    safe_exit(0);
+                }
 
             default:
                 if(j) {

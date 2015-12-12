@@ -20,4 +20,6 @@ typedef struct status_t {
 
 char *time_printable(char timer_buffer[TIME_BUFLEN]);
 
+char *get_eth0_ip(char *buff);
+
 #endif
