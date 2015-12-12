@@ -44,14 +44,14 @@ typedef struct status_t {
     int to_music_player[2];
     int from_music_player[2];
     int verbose;
-    char timer_buffer[TIME_BUFLEN];
+    char tmr_buf[TIME_BUFLEN];
     char ip_buffer[26];
     int port;
     struct cln *c;
 } status_t;
 
 
-status_t status = {
+status_t st = {
     .mp3_pid=0,
     .port=SERV_DEF_PORT
 };
@@ -67,9 +67,9 @@ struct cln {
 int close_mp3()
 {
     int i = -1;
-    if(status.mp3_pid != 0) {
-        i = kill(status.mp3_pid, SIGKILL);
-        status.mp3_pid = 0;
+    if(st.mp3_pid != 0) {
+        i = kill(st.mp3_pid, SIGKILL);
+        st.mp3_pid = 0;
     }
     return i;
 }
@@ -86,6 +86,15 @@ char *time_printable(char timer_buffer[TIME_BUFLEN])
     return timer_buffer;
 }
 
+void mplayer_exit(int sig)
+{
+    if(sig == SIGCHLD) {
+        printf("[%s] Track end\n", time_printable(st.tmr_buf));
+        st.mp3_pid = 0;
+        /* if playlist : play next tune */
+    }
+}
+
 void safe_exit(int sig)
 {
     switch(sig) {
@@ -93,11 +102,11 @@ void safe_exit(int sig)
     case SIGINT:
     default:
         close_mp3();
-        if(status.c){
-            free(status.c);
+        if(st.c){
+            free(st.c);
         }
 //        pthread_join(cthread, NULL);
-        printf("\r[%s] Closing now \n", time_printable(status.timer_buffer));
+        printf("\r[%s] Closing now \n", time_printable(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
 }
@@ -132,17 +141,22 @@ char *get_eth0_ip(char *buff)
 void *cthread(void *arg)
 {
     struct cln *c = (struct cln *)arg;
-//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(status.timer_buffer) );
-    char pass_buf[PASS_LENGTH];
+//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(st.tmr_buf) );
+    char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
+    char cmd[COMMAND_MAX_LEN];
     int n = 0;
+
+    strncpy(valid_pass, "PASS", PASS_LENGTH);
     n = read(c->cfd, &pass_buf, PASS_LENGTH);
-    if((n != PASS_LENGTH) || (strcmp(PASS, pass_buf))) {
-        printf("Client authentication failed");
+
+    if((n != PASS_LENGTH) || (strcmp(valid_pass, pass_buf))) {
+        printf("Client authentication failed: got %s expected %s\n", 
+                pass_buf, valid_pass);
         goto end_connection;
     }
 
-    printf("[Accepted] Request: %s\n", time_printable(status.timer_buffer) );
-    write(c->cfd, "Kuba Buda 119507", 16);
+    printf("[Accepted] Request: %s\n", time_printable(st.tmr_buf) );
+//    write(c->cfd, "Kuba Buda 119507", 16);
 
 end_connection:
     close(c->cfd);
@@ -156,10 +170,10 @@ int play_path(char *path)
     int i;
     close_mp3();
 
-    if((status.mp3_pid = fork()) == 0) {
+    if((st.mp3_pid = fork()) == 0) {
         // launch mpg123 in separate process binded by two pipes
-        dup2(status.to_music_player[0], STDIN_FILENO);
-        dup2(status.from_music_player[1], STDERR_FILENO);
+        dup2(st.to_music_player[0], STDIN_FILENO);
+        dup2(st.from_music_player[1], STDERR_FILENO);
 
         printf("[CALLING]%s %s %s\n", PLAYER_PATH, COMMAND, path);
         i = execlp(PLAYER_PATH, PLAYER_PATH, COMMAND, path, NULL);
@@ -168,8 +182,8 @@ int play_path(char *path)
         }
         return i;
     } else {
-        if(status.verbose){
-            printf("[%s] Now playing:%s\n", time_printable(status.timer_buffer),
+        if(st.verbose){
+            printf("[%s] Now playing:%s\n", time_printable(st.tmr_buf),
                    path
             );
         }
@@ -177,14 +191,59 @@ int play_path(char *path)
     }
 }
 
+int play_locally(char *path)
+{
+    char full_path[COMMAND_MAX_LEN];
+    if (access(full_path, F_OK) != -1) {
+        play_path(full_path);
+    } else {
+        //file doesn't exist, something went wrong
+    }
+    return 0;
+}
+
+/* write string to slave music player through pipe */
+int swrite_mplayer(char *s, int n)
+{
+    int i = 0;
+    i = write(st.to_music_player[1], s, n);
+
+    return i;
+}
+
+/* write string to slave music player through pipe */
+int cwrite_mplayer(char c)
+{
+    int i = 0;
+    char cmd[2] = { '\0' };
+    cmd[0] = c;
+
+    i = write(st.to_music_player[1], cmd, 1);
+
+    return i;
+}
+
+/* command slave mp3 player */
+void mplayer_pause(void)
+{
+    cwrite_mplayer(MPG123_PAUSE_KEY);
+}
+
+void mplayer_louder(void)
+{
+    cwrite_mplayer(MPG123_VOL_UP_KEY);
+}
+
+
+
 int main(int argc, char *argv[])
 {
 
     signal(SIGQUIT, &safe_exit);
     signal(SIGINT, &safe_exit);
 
-    pipe(status.to_music_player);
-    pipe(status.from_music_player);
+    pipe(st.to_music_player);
+    pipe(st.from_music_player);
 
     int sfd;
     pthread_t tid;
@@ -204,7 +263,7 @@ int main(int argc, char *argv[])
     }
 
     myaddr.sin_family = PF_INET;
-    myaddr.sin_port = htons(status.port);
+    myaddr.sin_port = htons(st.port);
     myaddr.sin_addr.s_addr = INADDR_ANY;
 
     if(bind(sfd, (struct sockaddr*)&myaddr, sizeof(myaddr)) != 0) {
@@ -216,12 +275,13 @@ int main(int argc, char *argv[])
 
     // startup info maybe
     printf("[%s] now on IP %s Port %d \nPID=%d %s\n", (argv[0] + 2),
-           get_eth0_ip(status.ip_buffer), status.port, getpid(),
-           time_printable(status.timer_buffer)
+           get_eth0_ip(st.ip_buffer), st.port, getpid(),
+           time_printable(st.tmr_buf)
     );
 
-    status.verbose = 1;
-    play_path(MUSIC_PATH);
+    signal(SIGCHLD, &mplayer_exit);
+    st.verbose = 1;
+//    play_path(MUSIC_PATH);
 
     while(1) {
 
@@ -230,7 +290,7 @@ int main(int argc, char *argv[])
             perror("Problems with memory");
             exit(EXIT_FAILURE);
         }
-        status.c = c;
+        st.c = c;
         l = sizeof(c->caddr);
         if((c->cfd = accept(sfd, (struct sockaddr*)&clientaddr, &l)) < 0) {
             perror("Problem with accepting client");
@@ -238,12 +298,6 @@ int main(int argc, char *argv[])
         pthread_create(&tid, NULL, cthread, c);
         pthread_detach(tid);
 
-    }
-    close(sfd);
-
-    write(status.to_music_player[1], "q", 1);
-    if(kill(status.mp3_pid, SIGKILL)) {
-        perror("Closing mp3 player");
     }
 
     return 0;

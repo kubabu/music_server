@@ -34,7 +34,12 @@ server: $(SERVER_OBJ)
 client: $(CLIENT_OBJ)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
 
-.PHONY: clean valgrind_test_server
+.PHONY: all clean clean_build test_server_with_valgrind test_run_client
+
+all: server client
+
+clean_build: clean all
+
 
 clean:
 	rm -f $(ODIR)/*.o *~ $(INCDIR)/*~ $(BINDIR)/* 
@@ -42,8 +47,8 @@ clean:
 
 VALGRIND_FLAGS = --leak-check=full --track-origins=yes
 ## tests together with builds is a mess and will be removed 
-test_server_with_valgrind:
+test_server_with_valgrind: server
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server
 
-test_run_client:
+test_run_client: client
 	$(BINDIR)/client localhost 1234
