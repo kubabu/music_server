@@ -54,7 +54,7 @@ void safe_exit(int sig)
 
 int main(int argc, char *argv[])
 {
-    int fd, con, n, port;
+    int fd, con, m, n, port;
     char cmd_buf[COMMAND_MAX_LEN];
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
@@ -103,8 +103,14 @@ int main(int argc, char *argv[])
     printf("\nREPL mode\n> ");
 
     while(1) {
-//        n = 0;
-  //      memset(cmd_buf, '\0', COMMAND_MAX_LEN);
+        m = sizeof(n);
+        con = getsockopt(fd, SOL_SOCKET, SO_ERROR, &n, &m);
+        if(con 
+            perror("Connection possibly lost");
+            exit(EXIT_SUCCESS);
+        }
+        n = 0;
+        memset(cmd_buf, '\0', COMMAND_MAX_LEN);
 
         read(STDIN_FILENO, cmd_buf, 1);
         write(fd, cmd_buf, 1);

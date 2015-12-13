@@ -173,9 +173,8 @@ int main(int argc, char *argv[])
     listen(sfd, 5);
 
     // startup info maybe
-    printf("[%s] now on IP %s Port %d \nPID=%d %s\n", (argv[0] + 2),
-           get_ip(st.ip_buffer), st.port, getpid(),
-           timestamp(st.tmr_buf)
+    printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
+           get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
     );
 
     signal(SIGCHLD, &mplayer_exit);
