@@ -71,6 +71,7 @@ int dump_incoming_buffer(int cfd, int ofd, int count)
         }
         write(ofd, &buf, n);
     }
+    buf != '\n' ? write(ofd, "\n", n) : buf;
     return c;
 }
 
