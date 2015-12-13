@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 {
     int fd, con, n, port;
     unsigned int m;
-    char cmd_buf[COMMAND_MAX_LEN];
+    char c, cmd_buf[COMMAND_MAX_LEN];
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
 
@@ -103,7 +103,10 @@ int main(int argc, char *argv[])
     n = 0;
 
     if(argc > 3) {
-        //
+        for(m = 3; m < argc; m++) {
+            write(fd, argv[m], strlen(argv[m]));
+            write(STDOUT_FILENO, argv[m], strlen(argv[m]));
+        }
     } else {
         printf("<REPL mode>\n");
 
@@ -116,14 +119,14 @@ int main(int argc, char *argv[])
             }
             n = 0;
             memset(cmd_buf, '\0', COMMAND_MAX_LEN);
-
-            read(STDIN_FILENO, cmd_buf, 1);
-            write(fd, cmd_buf, 1);
+            for(n = 0; n < COMMAND_MAX_LEN; n++) {
+                read(STDIN_FILENO, cmd_buf, 1);
+                write(fd, cmd_buf, 1);
     //        dump_incoming_buffer(fd, STDOUT_FILENO, 1);
+            }
         }
     }
-    conn_close(fd);
-    close(fd);
+    safe_exit(0);
 
     return 0;
 }

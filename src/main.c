@@ -116,7 +116,8 @@ void *cthread(void *arg)
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
             case 'e':
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
-                    write(c->cfd, "SERVER EXIT\n", 13);
+                    write(STDOUT_FILENO, "SERVER EXIT\n", 13);
+                    //write(c->cfd, "SERVER EXIT\n", 13);
                     safe_exit(0);
                 }
 

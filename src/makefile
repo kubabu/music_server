@@ -52,3 +52,6 @@ test_server_with_valgrind: server
 
 test_run_client: client
 	valgrind $(BINDIR)/client localhost 1234
+
+test_go:
+	test_server_with_valgrind
