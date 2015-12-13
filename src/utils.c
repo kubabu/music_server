@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -45,17 +46,22 @@ char *get_eth0_ip(char *buff)
     return buff;
 }
 
-void dump_incoming_buffer(int cfd, int ofd){
+void dump_incoming_buffer(int cfd, int ofd)
+{
     int printed = 0;
     int n = 0;
     char buf[1];
-    while((n = read(cfd, buf, 1))) {
+
+    time_t t1, t2;
+    time(&t1);
+
+    while(time(&t2) <= t1 + 1) { /* TODO beter timeout with read() in other thread */
+        n = read(cfd, buf, 1);
         if(!printed) {
             write(ofd, "[remote] ", 10);
-            printed = 1;
+            printed = n;
         }
-        write(ofd, buf, 1);
-        // n = ?
+        write(ofd, buf, n);
     }
 }
 

@@ -110,8 +110,6 @@ int main(int argc, char *argv[])
     }
 */
     conn_fd = fd;
-//    dup2(fd, STDOUT_FILENO);
-//    dup2(fd, STDOUT_FILENO);
     dump_incoming_buffer(fd, STDOUT_FILENO);
 
     printf("REPL mode\n> ");
