@@ -34,7 +34,7 @@ struct cln {
 void mplayer_exit(int sig)
 {
     if(sig == SIGCHLD) {
-        printf("[%s] Track end\n", time_printable(st.tmr_buf));
+        printf("[%s] Track end\n", timestamp(st.tmr_buf));
         st.mp3_pid = 0;
         /* if playlist : play next tune */
     }
@@ -52,7 +52,7 @@ void safe_exit(int sig)
             free(st.c);
         }
 //        pthread_join(cthread, NULL);
-        printf("\r[%s] Closing now \n", time_printable(st.tmr_buf));
+        printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
 }
@@ -60,7 +60,7 @@ void safe_exit(int sig)
 void *cthread(void *arg)
 {
     struct cln *c = (struct cln *)arg;
-//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, time_printable(st.tmr_buf) );
+//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, timestamp(st.tmr_buf) );
     char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
     int i, j, connect;
@@ -80,10 +80,10 @@ void *cthread(void *arg)
         goto con_end;
     }
 
-    time_printable(st.tmr_buf);
+    timestamp(st.tmr_buf);
     printf("[%s] Accepted client\n", st.tmr_buf);
     connect = 1;
-    write(c->cfd, "Client accepted\n", 17);
+    write(c->cfd, "Client accepted", 17);
     // send JSON with mp3 root
 //    write(c->cfd, "Kuba Buda 119507", 16);
      do {
@@ -122,12 +122,12 @@ void *cthread(void *arg)
 
             default:
                 if(j) {
-                    printf("[%s] Got invalid command\n", time_printable(st.tmr_buf));           }
+                    printf("[%s] Got invalid command\n", timestamp(st.tmr_buf));           }
         }
     } while(connect);
 
 con_end:
-    printf("[%s] Client disconnected \n", time_printable(st.tmr_buf) );
+    printf("[%s] Client disconnected \n", timestamp(st.tmr_buf) );
     close(c->cfd);
     free(c);
 
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     }
 
     int sfd_on = 1;
-    // set SO_REUSEADDR to enable quick rebooting server on the same port
+    // SO_REUSEADDR to enable quick rebooting server on the same port
     if(( setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (char*)&sfd_on, sizeof(sfd_on))) < 0) {
         perror("Failed to set socket options");
         return 1;
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
 
     // startup info maybe
     printf("[%s] now on IP %s Port %d \nPID=%d %s\n", (argv[0] + 2),
-           get_eth0_ip(st.ip_buffer), st.port, getpid(),
-           time_printable(st.tmr_buf)
+           get_ip(st.ip_buffer), st.port, getpid(),
+           timestamp(st.tmr_buf)
     );
 
     signal(SIGCHLD, &mplayer_exit);

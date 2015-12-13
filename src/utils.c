@@ -1,13 +1,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "utils.h"
 
 
-char *time_printable(char timer_buffer[TIME_BUFLEN])
+char *timestamp(char timer_buffer[TIME_BUFLEN])
 {
     time_t timer;
     struct tm *timer_info;
@@ -19,7 +20,7 @@ char *time_printable(char timer_buffer[TIME_BUFLEN])
     return timer_buffer;
 }
 
-char *get_eth0_ip(char *buff)
+char *get_ip(char *buff)
 {
     char c;
     int n, p[2];
@@ -40,29 +41,37 @@ char *get_eth0_ip(char *buff)
                 buff[n++] = c;
             }
         }
+        if(n == 0) {
+            n = strlen("localhost");
+            strncpy(buff, "localhost", n);
+        }
         close(p[0]);
         buff[n] = '\0';
     }
     return buff;
 }
 
-void dump_incoming_buffer(int cfd, int ofd)
+
+/* it expects unix type string - '\0' terminated  */
+int dump_incoming_buffer(int cfd, int ofd, int count)
 {
+    int c, n;
     int printed = 0;
-    int n = 0;
-    char buf[1];
+    char buf;
 
-    time_t t1, t2;
-    time(&t1);
+    c = 0;
+    n = 0;
+    buf = '\0';
 
-    while(time(&t2) <= t1 + 1) { /* TODO beter timeout with read() in other thread */
-        n = read(cfd, buf, 1);
-        if(!printed) {
+    while((n = read(cfd, &buf, 1)) && buf != '\0') {
+        c += n;
+        if(n && !printed) {
             write(ofd, "[remote] ", 10);
             printed = n;
         }
-        write(ofd, buf, n);
+        write(ofd, &buf, n);
     }
+    return c;
 }
 
 

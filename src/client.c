@@ -39,9 +39,9 @@ void print_cmd_buf(char *buf, size_t n)
 
 void conn_close(int conn_fd)
 {
-    char cmd[1];
-    cmd[0] = EOF;
-    write(conn_fd, cmd, 1);
+    char cmd;
+    cmd = EOF;
+    write(conn_fd, &cmd, 1);
 }
 
 void safe_exit(int sig)
@@ -95,27 +95,20 @@ int main(int argc, char *argv[])
     if(n != PASS_LENGTH) {
         perror("Problem with authentication to server");
     }
-/*
-    n = read(fd, cmd_buf, COMMAND_MAX_LEN);
-    if(n < 0) {
-        puts("Problem with reading from server");
-        return 1;
-    }
-    print_cmd_buf(cmd_buf, n);
 
-    memcpy(cmd_buf, "PASS", PASS_LENGTH);
-    for(n=0; n < PASS_LENGTH; n++) {
-        write(fd, cmd_buf+n, 1);
-        printf("[%d] %c=%d\n", n, cmd_buf[n], cmd_buf[n]);
-    }
-*/
     conn_fd = fd;
-    dump_incoming_buffer(fd, STDOUT_FILENO);
+    dump_incoming_buffer(fd, STDOUT_FILENO, 10);
 
-    printf("REPL mode\n> ");
-    while(read(STDIN_FILENO, cmd_buf, 1)) {
+    n = 0;
+    printf("\nREPL mode\n> ");
+
+    while(1) {
+//        n = 0;
+  //      memset(cmd_buf, '\0', COMMAND_MAX_LEN);
+
+        read(STDIN_FILENO, cmd_buf, 1);
         write(fd, cmd_buf, 1);
-        dump_incoming_buffer(fd, STDOUT_FILENO);
+//        dump_incoming_buffer(fd, STDOUT_FILENO, 1);
     }
     conn_close(fd);
     close(fd);

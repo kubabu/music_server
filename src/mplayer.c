@@ -48,7 +48,7 @@ int play_path(char *path, status_t *st)
         return i;
     } else {
         if(st->verbose){
-            printf("[%s] Now playing:%s\n", time_printable(st->tmr_buf),
+            printf("[%s] Now playing:%s\n", timestamp(st->tmr_buf),
                    path
             );
         }
@@ -80,10 +80,8 @@ int swrite_mplayer(int pfd, char *s, int n)
 int cwrite_mplayer(char c)
 {
     int i = 0;
-    char cmd[2] = { '\0' };
-    cmd[0] = c;
 
-//    i = write(*st->to_music_player[1], cmd, 1);
+    i = write(/* *st->to_music_player[1]*/2, &c, 1);
 
     return i;
 }
