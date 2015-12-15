@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
     play_locally("../mp3s/20Fox.mp3");
     play_locally("../mp3s/20Fox.mp3");
     play_locally("../mp3s/20Fox.mp3");
-//    play_locally("../mp3s/Tracy.mp3");
+    play_locally("../mp3s/Tracy.mp3");
 
     while(1) {
 
