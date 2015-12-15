@@ -25,7 +25,12 @@ LIBAOINCL=../lib/libao-1.2.0/include
 CFLAGS += -I$(LIBAOINCL)
 LIBAOBIN=../lib/libao-1.2.0/src
 LDFLAGS += -L$(LIBAOBIN)
-LIBS += -lao
+
+LIBS += -lcurl
+CURLINCL=../lib/curl-7.46.0/include
+CFLAGS += -I$(CURLINCL)
+CURLBIN=../lib/curl-7.46.0/src
+LDFLAGS += -L$(CURLBIN)
 
 ## Generic rules
 ## Build object files as non executable

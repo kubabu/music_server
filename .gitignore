@@ -3,6 +3,7 @@
 *.o
 bin/
 mp3s/*
+lib/curl*
 lib/libao*
 lib/mpg123*
 requirements/zadania.pdf

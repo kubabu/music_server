@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include  "ao/ao.h"
+#include  "curl/curl.h"
 #include  "mpg123.h"
 
 #include  "controls.h"
@@ -26,6 +27,7 @@ struct mpeg3_handle{
 char initd = 0;
 
 char stamp[TIME_BUFLEN];
+
 
 
 int init_mp3(void)
