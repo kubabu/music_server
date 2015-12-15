@@ -21,11 +21,10 @@
 
 #define BITS            8
 
-struct mpeg3_handle{
-};
 
-char initd = 0;
-
+static char initd;
+static char play;
+static off_t pos;
 char stamp[TIME_BUFLEN];
 
 
@@ -40,12 +39,16 @@ int init_mp3(void)
         mpg123_init();
     }
     initd = 1;
+    play = 1;
+    pos = 1;
 
     return i;
 }
 
 int close_mp3(void)
 {
+    pos = 0;
+    play = 0;
     mpg123_exit();
     ao_shutdown();
 
@@ -84,7 +87,7 @@ int play_local(char *path)
     format.matrix = 0;
     dev = ao_open_live(driver, &format, NULL);
 
-    while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK) {
+    while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK && play) {
         ao_play(dev, (char*)buffer, done);
     }
     free(buffer);
