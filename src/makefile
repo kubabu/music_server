@@ -27,7 +27,6 @@ LIBAOBIN=../lib/libao-1.2.0/src
 LDFLAGS += -L$(LIBAOBIN)
 LIBS += -lao
 
-
 ## Generic rules
 ## Build object files as non executable
 $(ODIR)/%.o: %.c
@@ -56,7 +55,7 @@ clean:
 	rm -f $(ODIR)/*.o *~ $(INCDIR)/*~ $(BINDIR)/*
 
 ## tests in make are only temporary solution
-VALGRIND_FLAGS = --leak-check=full --track-origins=yes
+VALGRIND_FLAGS = --leak-check=full --track-origins=yes --show-leak-kinds=all
 ## tests together with builds is a mess and will be removed
 test_server_with_valgrind: server
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server

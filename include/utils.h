@@ -11,6 +11,7 @@ typedef struct status_t {
     int mp3_pid;
     int to_music_player[2];
     int from_music_player[2];
+    char *l_s_root;
     int verbose;
     char tmr_buf[TIME_BUFLEN];
     char ip_buffer[26];

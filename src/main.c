@@ -31,15 +31,6 @@ struct cln {
     struct sockaddr_in caddr;
 };
 
-void mplayer_exit(int sig)
-{
-    if(sig == SIGCHLD) {
-        printf("[%s] Track end\n", timestamp(st.tmr_buf));
-        st.mp3_pid = 0;
-        /* if playlist : play next tune */
-    }
-}
-
 void safe_exit(int sig)
 {
     switch(sig) {
@@ -47,7 +38,7 @@ void safe_exit(int sig)
     case SIGINT:
         printf("\rGot signal %d\n", sig);
     default:
-        close_mp3(&st.mp3_pid);
+        close_mp3();
         if(st.c){
             free(st.c);
         }
@@ -178,9 +169,12 @@ int main(int argc, char *argv[])
            get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
     );
 
-    signal(SIGCHLD, &mplayer_exit);
     st.verbose = 1;
-    play_path("", &st);
+
+    play_locally("../mp3s/20Fox.mp3");
+    play_locally("../mp3s/20Fox.mp3");
+    play_locally("../mp3s/20Fox.mp3");
+//    play_locally("../mp3s/Tracy.mp3");
 
     while(1) {
 
