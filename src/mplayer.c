@@ -23,9 +23,24 @@
 struct mpeg3_handle{
 };
 
-struct mpeg3_handle mph;
+char initd = 0;
 
 char stamp[TIME_BUFLEN];
+
+
+int init_mp3(void)
+{
+    static int i;
+
+    if(!initd) {
+        ao_initialize();
+        i = ao_default_driver_id();
+        mpg123_init();
+    }
+    initd = 1;
+
+    return i;
+}
 
 int close_mp3(void)
 {
@@ -51,10 +66,8 @@ int play_local(char *path)
     size_t buffer_size;
     size_t done;
 
+    driver = init_mp3();
 
-    ao_initialize();
-    driver = ao_default_driver_id();
-    mpg123_init();
     mh = mpg123_new(NULL, &err);
     buffer_size = mpg123_outblock(mh);
     buffer = malloc(buffer_size * sizeof(unsigned char));
@@ -76,37 +89,8 @@ int play_local(char *path)
     ao_close(dev);
     mpg123_close(mh);
     mpg123_delete(mh);
-    mpg123_exit();
-    ao_shutdown();
-
-    return err;
-
-    ao_initialize();
-    driver = ao_default_driver_id();
-    mpg123_init();
-    mh = mpg123_new(NULL, &err);
-    buffer_size = mpg123_outblock(mh);
-    buffer = malloc(buffer_size * sizeof(unsigned char));
-
-    mpg123_open(mh, path);
-    mpg123_getformat(mh, &rate, &channels, &encoding);
-
-    format.bits = mpg123_encsize(encoding) * BITS;
-    format.rate = rate;
-    format.channels = channels;
-    format.byte_format = AO_FMT_NATIVE;
-    format.matrix = 0;
-    dev = ao_open_live(driver, &format, NULL);
-
-    while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK) {
-        ao_play(dev, (char*)buffer, done);
-    }
-    free(buffer);
-    ao_close(dev);
-    mpg123_close(mh);
-    mpg123_delete(mh);
-    mpg123_exit();
-    ao_shutdown();
+//    mpg123_exit();
+//    ao_shutdown();
 
     return err;
 }
