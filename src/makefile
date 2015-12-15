@@ -1,32 +1,32 @@
 CC=gcc
 IDIR =../include
 CFLAGS=-Wall -I$(IDIR)
-LDFLAGS= ##-static
+LDFLAGS= #-static
 
-ODIR=obj
+## Project structure
+ODIR=./obj
 LDIR =../lib
 BINDIR=../bin
 
-LIBINCLUDE=../lib/
-LIBBIN=../lib/
+## Libraries
 LIBS=-pthread
-
+LIBINCLUDE=$(LDIR)
+LIBBIN=$(LDIR)
 CFLAGS+=-I$(LIBINCLUDE)
 LDFLAGS+=-L$(LIBBIN)
 
-MPG123PATH=../lib/mpg123/src/libmpg123
+LIBS += -lmpg123
+MPG123PATH=../lib/mpg123-1.22.4/src/libmpg123
 CFLAGS += -I$(MPG123PATH)
 LDFLAGS += -L$(MPG123PATH)
-LIBS += -lmpg123
 
-_DEPS = controls.h mplayer.h utils.h 
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
+LIBS += -lao
+LIBAOINCL=../lib/libao-1.2.0/include
+CFLAGS += -I$(LIBAOINCL)
+LIBAOBIN=../lib/libao-1.2.0/src
+LDFLAGS += -L$(LIBAOBIN)
+LIBS += -lao
 
-_SERVER_OBJ = main.o mplayer.o utils.o
-SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
-
-_CLIENT_OBJ = client.o utils.o
-CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
 
 ## Generic rules
 ## Build object files as non executable
@@ -36,8 +36,14 @@ $(ODIR)/%.o: %.c
 ## Exact rules
 all: server client
 
+_SERVER_OBJ = main.o mplayer.o utils.o
+SERVER_OBJ = $(patsubst %,$(ODIR)/%,$(_SERVER_OBJ))
+
 server: $(SERVER_OBJ)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
+
+_CLIENT_OBJ = client.o utils.o
+CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
 
 client: $(CLIENT_OBJ)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
@@ -47,11 +53,11 @@ client: $(CLIENT_OBJ)
 clean_build: clean all
 
 clean:
-	rm -f $(ODIR)/*.o *~ $(INCDIR)/*~ $(BINDIR)/* 
+	rm -f $(ODIR)/*.o *~ $(INCDIR)/*~ $(BINDIR)/*
 
 ## tests in make are only temporary solution
 VALGRIND_FLAGS = --leak-check=full --track-origins=yes
-## tests together with builds is a mess and will be removed 
+## tests together with builds is a mess and will be removed
 test_server_with_valgrind: server
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server
 

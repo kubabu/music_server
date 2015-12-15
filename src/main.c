@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
     signal(SIGCHLD, &mplayer_exit);
     st.verbose = 1;
-//    play_path(MUSIC_PATH);
+    play_path("", &st);
 
     while(1) {
 
