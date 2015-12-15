@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
 {
     int fd, con, n, port;
     unsigned int m;
-    char c, cmd_buf[COMMAND_MAX_LEN];
+    char cmd_buf[COMMAND_MAX_LEN];
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
 
@@ -122,7 +122,6 @@ int main(int argc, char *argv[])
             for(n = 0; n < COMMAND_MAX_LEN; n++) {
                 read(STDIN_FILENO, cmd_buf, 1);
                 write(fd, cmd_buf, 1);
-    //        dump_incoming_buffer(fd, STDOUT_FILENO, 1);
             }
         }
     }

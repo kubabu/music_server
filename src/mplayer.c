@@ -2,18 +2,15 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include  "mpg123.h"
+
 #include  "controls.h"
 #include  "mplayer.h"
 #include  "utils.h"
 
-#undef SYSTEM_MPG123_INSTALL
-#define LIBPATH         "../lib/bin/"
 
-#ifdef SYSTEM_MPG123_INSTALL
-  #define PLAYER_PATH     "/usr/bin/mpg123p"
-#else
-  #define PLAYER_PATH     LIBPATH"mpg123p"
-#endif
+#define LIBPATH         "../lib/bin/"
+#define PLAYER_PATH     LIBPATH"mpg123p"
 #define MUSIC_ROOT      "../mp3s/"
 #define MUSIC_SAMPLE    "Tracy.mp3"
 #define MUSIC_PATH      MUSIC_ROOT MUSIC_SAMPLE
@@ -34,6 +31,8 @@ int play_path(char *path, status_t *st)
 {
     int i;
     close_mp3(&st->mp3_pid);
+
+    mpg123_init();
 
     if((st->mp3_pid = fork()) == 0) {
         // launch mpg123 in separate process binded by two pipes
