@@ -19,10 +19,7 @@
 
 
 
-status_t st = {
-    .mp3_pid=0,
-    .port=SERV_DEF_PORT
-};
+status_t st;
 
 void *cthread(void *arg);
 
@@ -42,7 +39,7 @@ void safe_exit(int sig)
         if(st.c){
             free(st.c);
         }
-//        pthread_join(cthread, NULL);
+/*         pthread_join(cthread, NULL); */
         printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
@@ -51,7 +48,7 @@ void safe_exit(int sig)
 void *cthread(void *arg)
 {
     struct cln *c = (struct cln *)arg;
-//    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, timestamp(st.tmr_buf) );
+/*    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, timestamp(st.tmr_buf) ); */
     char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
     int i, j, connect;
@@ -75,10 +72,11 @@ void *cthread(void *arg)
     printf("[%s] Accepted client\n", st.tmr_buf);
     connect = 1;
     write(c->cfd, "Client accepted", 17);
-    // send JSON with mp3 root
-//    write(c->cfd, "Kuba Buda 119507", 16);
+    /* send JSON with mp3 root
+    write(c->cfd, "Kuba Buda 119507", 16);
+    */
      do {
-        // listen for client commands
+        /* listen for client commands */
         j = 0;
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
         for(i = 0; i < COMMAND_MAX_LEN; i += j) {
@@ -103,12 +101,12 @@ void *cthread(void *arg)
                 }
         }
     cmd_parse:
-        //parse command
+        /* parse command */
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
             case 'e':
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     write(STDOUT_FILENO, "SERVER EXIT\n", 13);
-                    //write(c->cfd, "SERVER EXIT\n", 13);
+                    /* write(c->cfd, "SERVER EXIT\n", 13); */
                     safe_exit(0);
                 }
 
@@ -129,6 +127,13 @@ con_end:
 
 int main(int argc, char *argv[])
 {
+    int sfd, sfd_on;
+    pthread_t tid;
+    socklen_t l;
+    struct sockaddr_in myaddr, clientaddr;
+
+    st.mp3_pid = 0;
+    st.port = SERV_DEF_PORT;
 
     signal(SIGQUIT, &safe_exit);
     signal(SIGINT, &safe_exit);
@@ -136,18 +141,17 @@ int main(int argc, char *argv[])
     pipe(st.to_music_player);
     pipe(st.from_music_player);
 
-    int sfd;
-    pthread_t tid;
-    socklen_t l;
-    struct sockaddr_in myaddr, clientaddr;
+    if(argc > 1) {
+        st.port = atoi(argv[1]);
+    }
 
     if((sfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Failed to open socket");
         return 1;
     }
 
-    int sfd_on = 1;
-    // SO_REUSEADDR to enable quick rebooting server on the same port
+    sfd_on = 1;
+    /* SO_REUSEADDR to enable quick rebooting server on the same port */
     if(( setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (char*)&sfd_on, sizeof(sfd_on))) < 0) {
         perror("Failed to set socket options");
         return 1;
@@ -164,21 +168,12 @@ int main(int argc, char *argv[])
 
     listen(sfd, 5);
 
-    // startup info maybe
+    /* startup info maybe */
     printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
            get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
     );
 
     st.verbose = 1;
-
-    play_locally("../mp3s/20Fox.mp3");
-    play_locally("../mp3s/20Fox.mp3");
-    play_locally("../mp3s/20Fox.mp3");
-    play_locally("../mp3s/Tracy.mp3");
-    play_locally("../mp3s/Tracy.mp3");
-    play_locally("../mp3s/Tracy.mp3");
-    play_locally("../mp3s/Tracy.mp3");
-    play_locally("../mp3s/Tracy.mp3");
 
     while(1) {
 

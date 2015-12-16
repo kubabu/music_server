@@ -1,6 +1,6 @@
 CC=gcc
 IDIR =../include
-CFLAGS=-Wall -I$(IDIR)
+CFLAGS=-Wall -Wextra -pedantic -Werror -I$(IDIR)
 LDFLAGS= #-static
 
 ## Project structure

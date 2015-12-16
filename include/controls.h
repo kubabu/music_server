@@ -50,7 +50,7 @@
 
 #define MAX_CLIENT_COUNT 512
 
-//Serious business
+/* Serious business */
 #define PASS_LENGTH 5
 #define PASS 'root'
 

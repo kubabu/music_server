@@ -10,16 +10,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* #include "dbg.h" */
 #include "controls.h"
-#include "dbg.h"
 #include "utils.h"
 
 /* This client is intended only for server testing */
 
 int conn_fd;
 
-
-//extern void dump_incoming_buffer(int cfd, int ofd);
 
 void print_cmd_buf(char *buf, size_t n)
 {
@@ -48,7 +46,11 @@ void safe_exit(int sig)
 {
     conn_close(conn_fd);
     close(conn_fd);
-    printf("\rClosing test client...\n");
+    if(sig) {
+        printf("\rGot SIG%d, closing test client...\n", sig);
+    } else {
+        printf("\rClosing test client...\n");
+    }
     exit(EXIT_SUCCESS);
 }
 
@@ -103,7 +105,7 @@ int main(int argc, char *argv[])
     n = 0;
 
     if(argc > 3) {
-        for(m = 3; m < argc; m++) {
+        for(m = 3; (int)m < argc; m++) {
             write(fd, argv[m], strlen(argv[m]));
             write(STDOUT_FILENO, argv[m], strlen(argv[m]));
         }

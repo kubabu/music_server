@@ -65,6 +65,9 @@ int dump_incoming_buffer(int cfd, int ofd, int count)
 
     while((n = read(cfd, &buf, 1)) && buf != '\0') {
         c += n;
+        if(c > count) {
+            break;
+        }
         if(n && !printed) {
             write(ofd, "[remote] ", 10);
             printed = n;

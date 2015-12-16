@@ -94,8 +94,8 @@ int play_local(char *path)
     ao_close(dev);
     mpg123_close(mh);
     mpg123_delete(mh);
-//    mpg123_exit();
-//    ao_shutdown();
+/*    mpg123_exit();
+    ao_shutdown(); */
 
     return err;
 }
@@ -107,7 +107,7 @@ int play_locally(char *path)
         printf("[%s] Now playing: %s\n", timestamp(stamp), path);
         play_local(path);
     } else {
-        //file doesn't exist, something went wrong
+        /* file doesn't exist, something went wrong */
         return -1;
     }
     return 0;
