@@ -7,7 +7,30 @@
 
 #include "utils.h"
 
+#define TIMEOUT_SEC     2
 
+
+/* low resolution timeout counter */
+static time_t tmr;
+
+void tmr_update(void)
+{
+    time(&tmr);
+}
+
+char timeout(void)
+{
+    time_t cur_tmr;
+    time(&cur_tmr);
+
+    if((cur_tmr - TIMEOUT_SEC) > tmr) {
+        return 1;
+    }
+    return 0;
+}
+
+
+/* printable timestamp */
 char *timestamp(char timer_buffer[TIME_BUFLEN])
 {
     time_t timer;

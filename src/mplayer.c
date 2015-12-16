@@ -94,7 +94,8 @@ int play_local(char *path)
     ao_close(dev);
     mpg123_close(mh);
     mpg123_delete(mh);
-/*    mpg123_exit();
+/*
+    mpg123_exit();
     ao_shutdown(); */
 
     return err;

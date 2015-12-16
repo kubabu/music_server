@@ -119,12 +119,14 @@ int main(int argc, char *argv[])
                 perror("Connection possibly lost");
                 exit(EXIT_SUCCESS);
             }
-            n = 0;
+            read(STDIN_FILENO, cmd_buf, 1);
+            write(fd, cmd_buf, 1);
+/*            n = 0;
             memset(cmd_buf, '\0', COMMAND_MAX_LEN);
             for(n = 0; n < COMMAND_MAX_LEN; n++) {
                 read(STDIN_FILENO, cmd_buf, 1);
                 write(fd, cmd_buf, 1);
-            }
+            }  */
         }
     }
     safe_exit(0);
