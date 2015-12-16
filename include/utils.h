@@ -51,4 +51,6 @@ char conf_pswd(char *pass, int c);
 /* get client ID - first free index of pointers array */
 int getcid(client_t **buf, int max);
 
+int printcl(client_t *cl, int i);
+
 #endif
