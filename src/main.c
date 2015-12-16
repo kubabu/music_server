@@ -25,19 +25,36 @@ status_t st;
 
 void *cthread(void *arg);
 
-void safe_exit(int sig)
+void s_safe_exit(int sig)
 {
     switch(sig) {
     case SIGQUIT:
     case SIGINT:
         printf("\rGot signal %d\n", sig);
     default:
-        free(st.c);
+        if(st.c != NULL) {
+            free(st.c);
+        }
         close_mp3();
 /*         pthread_join(cthread, NULL); */
         printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
+}
+
+
+int ct_close(struct client_t *c)
+{
+    close(c->cfd);
+    if(c != NULL) {
+        /* free((void *)c); */
+        free(c);
+    }
+    if(st.exit) {
+        write(STDOUT_FILENO, "SERVER EXIT\n", 13);
+    }
+    printf("[%s] Client %d disconnected \n", timestamp(st.tmr_buf), (int)pthread_self());
+    pthread_exit(NULL);
 }
 
 void *cthread(void *cln)
@@ -63,16 +80,20 @@ void *cthread(void *cln)
         for(i=0; i < PASS_LENGTH; ++i) {
             printf("[%d] %c{%d} -  %c{%d}\n", i, pass_buf[i], pass_buf[i], valid_pass[i], valid_pass[i]);
         }
-        goto con_end;
+        ct_close(c);
     }
 
     /* Log info */
-    printf("[%s] Accepted request from IP %s port %d\n", timestamp(st.tmr_buf),
-            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port);
+    printf("[%s] Accepted request from IP %s port %d as client %d\n", timestamp(st.tmr_buf),
+            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, (int)pthread_self());
     st.exit = 0;
     connect = 1;
+/*
+    st.exit = 1;
+    ct_close(c);
+
     write(c->cfd, "Client accepted", 17);
-/*    send JSON with mp3 root
+    send JSON with mp3 root
     write(c->cfd, "Kuba Buda 119507", 16);
     */
      do {
@@ -105,53 +126,46 @@ void *cthread(void *cln)
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
             case 'e':
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
-                    write(STDOUT_FILENO, "SERVER EXIT\n", 13);
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     st.exit = 1;
-                    goto con_end;
+                    ct_close(c);
                 }
 
             default:
                 if(j) {
                     printf("[%s] Got invalid command\n", timestamp(st.tmr_buf));           }
         }
-    } while(connect);
+    } while(connect && !st.exit);
 
-con_end:
-    printf("[%s] Client disconnected \n", timestamp(st.tmr_buf) );
-    close(c->cfd);
-    free(c);
-    if(st.exit) {
-        safe_exit(0);
-    }
-
+    ct_close(c);
+/*    kill(getpid(), SIGINT); */
     return 0;
 }
 
 
 int main(int argc, char *argv[])
 {
-    int sfd, sfd_on;
+    int sfd_on;
     socklen_t l;
-    struct sockaddr_in myaddr;
     pthread_t *ptid;
+    struct sockaddr_in myaddr;
 
-    signal(SIGQUIT, &safe_exit);
-    signal(SIGINT, &safe_exit);
+    signal(SIGQUIT, &s_safe_exit);
+    signal(SIGINT, &s_safe_exit);
 
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
         st.port = atoi(argv[1]);
     }
 
-    if((sfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
+    if((st.sfd = socket(PF_INET, SOCK_STREAM, 0)) < 0) {
         perror("Failed to open socket");
         return 1;
     }
 
     sfd_on = 1;
     /* SO_REUSEADDR to enable quick rebooting server on the same port */
-    if(( setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (char*)&sfd_on, sizeof(sfd_on))) < 0) {
+    if(( setsockopt(st.sfd, SOL_SOCKET, SO_REUSEADDR, (char*)&sfd_on, sizeof(sfd_on))) < 0) {
         perror("Failed to set socket options");
         return 1;
     }
@@ -160,12 +174,12 @@ int main(int argc, char *argv[])
     myaddr.sin_port = htons(st.port);
     myaddr.sin_addr.s_addr = INADDR_ANY;
 
-    if(bind(sfd, (struct sockaddr*)&myaddr, sizeof(myaddr)) != 0) {
+    if(bind(st.sfd, (struct sockaddr*)&myaddr, sizeof(myaddr)) != 0) {
         perror("Problem with binding socket");
         return 1;
     }
 
-    listen(sfd, 5);
+    listen(st.sfd, 5);
 
     /* startup info maybe */
     printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
@@ -173,9 +187,9 @@ int main(int argc, char *argv[])
     );
     st.verbose = 1;
 
-    while(1) {
-
-        struct client_t *c = malloc(sizeof(struct client_t));
+    while(!st.exit) {
+        struct client_t *c;
+        c = malloc(sizeof(struct client_t));
         if(!c){
             perror("Problems with memory");
             exit(EXIT_FAILURE);
@@ -184,13 +198,13 @@ int main(int argc, char *argv[])
         ptid = &c->tid;
         l = sizeof(c->caddr);
 
-        if((c->cfd = accept(sfd, (struct sockaddr*)&c->caddr, &l)) < 0) {
+        if((c->cfd = accept(st.sfd, (struct sockaddr*)&c->caddr, &l)) < 0) {
             perror("Problem with accepting client");
         }
         pthread_create(ptid, NULL, cthread, c);
-/*        pthread_detach(tid); */
-
+        pthread_detach(*ptid);
     }
+    s_safe_exit(0);
 
     return 0;
 }

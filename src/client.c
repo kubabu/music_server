@@ -100,7 +100,6 @@ int main(int argc, char *argv[])
     }
 
     conn_fd = fd;
-    dump_incoming_buffer(fd, STDOUT_FILENO, 10);
 
     n = 0;
 

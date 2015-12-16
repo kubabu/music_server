@@ -21,6 +21,7 @@ typedef struct status_t {
     char tmr_buf[TIME_BUFLEN];
     char ip_buffer[26];
     int port;
+    int sfd;
     struct client_t *c;
 } status_t;
 
@@ -34,7 +35,5 @@ struct client_t {
 char *timestamp(char timer_buffer[TIME_BUFLEN]);
 
 char *get_ip(char *buff);
-
-int dump_incoming_buffer(int cfd, int ofd, int count);
 
 #endif
