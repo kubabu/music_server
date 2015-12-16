@@ -27,19 +27,19 @@ void *cthread(void *arg);
 
 void s_safe_exit(int sig)
 {
-    switch(sig) {
-    case SIGQUIT:
-    case SIGINT:
+    if(sig) {
         printf("\rGot signal %d\n", sig);
-    default:
-        if(st.c != NULL) {
-            free(st.c);
-        }
-        close_mp3();
-/*         pthread_join(cthread, NULL); */
-        printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
-        exit(EXIT_SUCCESS);
     }
+/*    if(pthread_join(st.c->tid, NULL)) {
+        puts("Joining client thread went wrong");
+
+    } */
+    if(st.c != NULL) {
+        free(st.c);
+    }
+    close_mp3();
+    printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
+    exit(EXIT_SUCCESS);
 }
 
 
@@ -47,11 +47,11 @@ int ct_close(struct client_t *c)
 {
     close(c->cfd);
     if(c != NULL) {
-        /* free((void *)c); */
         free(c);
     }
     if(st.exit) {
         write(STDOUT_FILENO, "SERVER EXIT\n", 13);
+        shutdown(st.sfd, SHUT_RDWR);
     }
     printf("[%s] Client %d disconnected \n", timestamp(st.tmr_buf), (int)pthread_self());
     pthread_exit(NULL);
@@ -199,7 +199,11 @@ int main(int argc, char *argv[])
         l = sizeof(c->caddr);
 
         if((c->cfd = accept(st.sfd, (struct sockaddr*)&c->caddr, &l)) < 0) {
-            perror("Problem with accepting client");
+            if(!st.exit) {
+                perror("Problem with accepting client");
+            } else {
+                s_safe_exit(0);
+            }
         }
         pthread_create(ptid, NULL, cthread, c);
         pthread_detach(*ptid);
