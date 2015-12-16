@@ -21,12 +21,9 @@
 
 status_t st;
 
-void *cthread(void *arg);
+/* client_t clbuff[MAX_CLIENTS]; */
 
-struct cln {
-    int cfd;
-    struct sockaddr_in caddr;
-};
+void *cthread(void *arg);
 
 void safe_exit(int sig)
 {
@@ -35,28 +32,29 @@ void safe_exit(int sig)
     case SIGINT:
         printf("\rGot signal %d\n", sig);
     default:
+        free(st.c);
         close_mp3();
-        if(st.c){
-            free(st.c);
-        }
 /*         pthread_join(cthread, NULL); */
         printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
         exit(EXIT_SUCCESS);
     }
 }
 
-void *cthread(void *arg)
+void *cthread(void *cln)
 {
-    struct cln *c = (struct cln *)arg;
-/*    printf("[Accepted] Request from IP %s port %d,%s\n", inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, timestamp(st.tmr_buf) ); */
+    struct client_t *c = cln;
+
     char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
-    int i, j, connect;
+    char connect;
+    int i, j;
 
+    /* set buffers */
     memset(pass_buf, '\0', PASS_LENGTH);
     memset(valid_pass, '\0', PASS_LENGTH);
     strncpy(valid_pass, "PASS\0", PASS_LENGTH);
 
+    /* Authenticate */
     i = read(c->cfd, &pass_buf, PASS_LENGTH);
 
     if((memcmp(valid_pass, pass_buf, PASS_LENGTH - 1))/* || (i != PASS_LENGTH) */) {
@@ -68,11 +66,13 @@ void *cthread(void *arg)
         goto con_end;
     }
 
-    timestamp(st.tmr_buf);
-    printf("[%s] Accepted client\n", st.tmr_buf);
+    /* Log info */
+    printf("[%s] Accepted request from IP %s port %d\n", timestamp(st.tmr_buf),
+            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port);
+    st.exit = 0;
     connect = 1;
     write(c->cfd, "Client accepted", 17);
-    /* send JSON with mp3 root
+/*    send JSON with mp3 root
     write(c->cfd, "Kuba Buda 119507", 16);
     */
      do {
@@ -107,7 +107,8 @@ void *cthread(void *arg)
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     write(STDOUT_FILENO, "SERVER EXIT\n", 13);
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
-                    safe_exit(0);
+                    st.exit = 1;
+                    goto con_end;
                 }
 
             default:
@@ -120,6 +121,9 @@ con_end:
     printf("[%s] Client disconnected \n", timestamp(st.tmr_buf) );
     close(c->cfd);
     free(c);
+    if(st.exit) {
+        safe_exit(0);
+    }
 
     return 0;
 }
@@ -128,19 +132,14 @@ con_end:
 int main(int argc, char *argv[])
 {
     int sfd, sfd_on;
-    pthread_t tid;
     socklen_t l;
-    struct sockaddr_in myaddr, clientaddr;
-
-    st.mp3_pid = 0;
-    st.port = SERV_DEF_PORT;
+    struct sockaddr_in myaddr;
+    pthread_t *ptid;
 
     signal(SIGQUIT, &safe_exit);
     signal(SIGINT, &safe_exit);
 
-    pipe(st.to_music_player);
-    pipe(st.from_music_player);
-
+    st.port = SERV_DEF_PORT;
     if(argc > 1) {
         st.port = atoi(argv[1]);
     }
@@ -172,23 +171,24 @@ int main(int argc, char *argv[])
     printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
            get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
     );
-
     st.verbose = 1;
 
     while(1) {
 
-        struct cln *c = malloc(sizeof(struct cln));
+        struct client_t *c = malloc(sizeof(struct client_t));
         if(!c){
             perror("Problems with memory");
             exit(EXIT_FAILURE);
         }
         st.c = c;
+        ptid = &c->tid;
         l = sizeof(c->caddr);
-        if((c->cfd = accept(sfd, (struct sockaddr*)&clientaddr, &l)) < 0) {
+
+        if((c->cfd = accept(sfd, (struct sockaddr*)&c->caddr, &l)) < 0) {
             perror("Problem with accepting client");
         }
-        pthread_create(&tid, NULL, cthread, c);
-        pthread_detach(tid);
+        pthread_create(ptid, NULL, cthread, c);
+/*        pthread_detach(tid); */
 
     }
 
