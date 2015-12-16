@@ -198,13 +198,17 @@ int main(int argc, char *argv[])
                 st.dos = 1;
             }
         }
+        if(st.dos) {
+            printf("[%s] End of DOS - clients accepted back again\n", timestamp(st.tmr_buf));
+        }
         st.dos = 0;
+
         c = clbuf[ffi];
 
         c = malloc(sizeof(client_t));
         if(!c){
             perror("Problems with memory");
-            exit(EXIT_FAILURE);
+            s_safe_exit(EXIT_FAILURE);
         }
         c->cid = ffi;
         st.c = c;
