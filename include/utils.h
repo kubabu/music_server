@@ -8,11 +8,18 @@
 
 #define COMMAND_MAX_LEN 512
 
-#define MAX_CLIENT_COUNT 512
+#define MAX_CLIENT_COUNT 2
 
 /* Serious business */
 #define PASS_LENGTH 5
 #define PASS 'root'
+
+/* aggregate parameters for client thread */
+typedef struct client_t {
+    int cfd;
+    struct sockaddr_in caddr;
+    pthread_t tid;
+} client_t;
 
 /* Global structure with configuration */
 typedef struct status_t {
@@ -26,20 +33,20 @@ typedef struct status_t {
     char ip_buffer[26];
     int port;
     int sfd;
-    struct client_t *c;
+    client_t *c;
 } status_t;
 
 
-struct client_t {
-    int cfd;
-    struct sockaddr_in caddr;
-    pthread_t tid;
-};
-
+/* printable timestamp */
 char *timestamp(char timer_buffer[TIME_BUFLEN]);
 
+/* printable IP */
 char *get_ip(char *buff);
 
+/* check if client authenticated properly */
 char conf_pswd(char *pass, int c);
+
+/* get first free index of pointers array */
+int getffi(void **buf, int max);
 
 #endif

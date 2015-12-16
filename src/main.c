@@ -20,8 +20,8 @@
 
 
 status_t st;
+/* client_t *clbuff[MAX_CLIENT_COUNT]; */
 
-/* client_t clbuff[MAX_CLIENT_COUNT]; */
 
 void *cthread(void *arg);
 
@@ -39,7 +39,7 @@ void s_safe_exit(int sig)
 }
 
 
-int ct_close(struct client_t *c)
+int ct_close(client_t *c)
 {
     close(c->cfd);
     if(c != NULL) {
@@ -55,7 +55,7 @@ int ct_close(struct client_t *c)
 
 void *cthread(void *cln)
 {
-    struct client_t *c = cln;
+    client_t *c = cln;
 
     char pass_buf[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
@@ -174,8 +174,8 @@ int main(int argc, char *argv[])
     st.verbose = 1;
 
     while(!st.exit) {
-        struct client_t *c;
-        c = malloc(sizeof(struct client_t));
+        client_t *c;
+        c = malloc(sizeof(client_t));
         if(!c){
             perror("Problems with memory");
             exit(EXIT_FAILURE);

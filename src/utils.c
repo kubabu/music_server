@@ -75,32 +75,6 @@ char *get_ip(char *buff)
 }
 
 
-/* it expects unix type string - '\0' terminated  */
-int dump_incoming_buffer(int cfd, int ofd, int count)
-{
-    int c, n;
-    int printed = 0;
-    char buf;
-
-    c = 0;
-    n = 0;
-    buf = '\0';
-
-    while((n = read(cfd, &buf, 1)) && buf != '\0') {
-        c += n;
-        if(c > count) {
-            break;
-        }
-        if(n && !printed) {
-            write(ofd, "[remote] ", 10);
-            printed = n;
-        }
-        write(ofd, &buf, n);
-    }
-    buf != '\n' ? write(ofd, "\n", n) : buf;
-    return c;
-}
-
 char conf_pswd(char *pass, int count)
 {
     char valid_pass[PASS_LENGTH];
@@ -123,3 +97,15 @@ char conf_pswd(char *pass, int count)
     return 1;
 }
 
+/* get first free index of pointers array */
+int getffi(void **buf, int max)
+{
+    int i;
+    i = 0;
+    for(i = 0; i < max; ++i) {
+        if(buf[i] == NULL) {
+            return i;
+        }
+    }
+    return -1;
+}
