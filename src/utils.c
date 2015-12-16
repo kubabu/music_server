@@ -98,7 +98,7 @@ char conf_pswd(char *pass, int count)
 }
 
 /* get first free index of pointers array */
-int getffi(void **buf, int max)
+int getcid(client_t **buf, int max)
 {
     int i;
     i = 0;

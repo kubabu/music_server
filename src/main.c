@@ -20,15 +20,40 @@
 
 
 status_t st;
-/* client_t *clbuff[MAX_CLIENT_COUNT]; */
+client_t *clbuf[MAX_CLIENT_COUNT];
 
 
 void *cthread(void *arg);
 
+int ct_close(client_t *c)
+{
+    printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
+            c->cid, (int)pthread_self());
+    if(c != NULL) {
+        close(c->cfd);
+        free(c);
+    }
+    if(st.exit) {
+        shutdown(st.sfd, SHUT_RDWR);
+    }
+    pthread_exit(NULL);
+}
+
+
 void s_safe_exit(int sig)
 {
+    int i;
+
     if(sig) {
         printf("\rGot signal %d\n", sig);
+    }
+    shutdown(st.sfd, SHUT_RDWR);
+    for(i = 0; i < MAX_CLIENT_COUNT; ++i){
+        if(clbuf[i] != NULL) {
+            ct_close(clbuf[i]);
+/*/            pthread_cancel(clbuf[i]->tid); */
+            free(clbuf[i]);
+        }
     }
     if(st.c != NULL) {
         free(st.c);
@@ -38,20 +63,6 @@ void s_safe_exit(int sig)
     exit(EXIT_SUCCESS);
 }
 
-
-int ct_close(client_t *c)
-{
-    close(c->cfd);
-    if(c != NULL) {
-        free(c);
-    }
-    if(st.exit) {
-        write(STDOUT_FILENO, "SERVER EXIT\n", 13);
-        shutdown(st.sfd, SHUT_RDWR);
-    }
-    printf("[%s] Client %d disconnected \n", timestamp(st.tmr_buf), (int)pthread_self());
-    pthread_exit(NULL);
-}
 
 void *cthread(void *cln)
 {
@@ -68,12 +79,15 @@ void *cthread(void *cln)
     /* Authenticate */
     i = read(c->cfd, &pass_buf, PASS_LENGTH);
     if(!conf_pswd(pass_buf, i)) {
+        printf("[%s] Request from IP %s port %d [client %d {%d}] failed to authenticate\n",
+               timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
+               c->caddr.sin_port, c->cid, (int)pthread_self());
         ct_close(c);
     }
 
     /* Log info */
-    printf("[%s] Accepted request from IP %s port %d as client %d\n", timestamp(st.tmr_buf),
-            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, (int)pthread_self());
+    printf("[%s] Accepted request from IP %s port %d as client %d {%d}\n", timestamp(st.tmr_buf),
+            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, c->cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
 /*
@@ -119,7 +133,9 @@ void *cthread(void *cln)
 
             default:
                 if(j) {
-                    printf("[%s] Got invalid command\n", timestamp(st.tmr_buf));           }
+                    printf("[%s]Client %d {%d}: invalid command\n", timestamp(st.tmr_buf),
+                            c->cid, (int)pthread_self());
+                }
         }
     } while(connect && !st.exit);
 
@@ -131,9 +147,10 @@ void *cthread(void *cln)
 
 int main(int argc, char *argv[])
 {
-    int sfd_on;
+    int ffi, sfd_on;
     socklen_t l;
     pthread_t *ptid;
+    client_t *c;
     struct sockaddr_in myaddr;
 
     signal(SIGQUIT, &s_safe_exit);
@@ -167,19 +184,29 @@ int main(int argc, char *argv[])
 
     listen(st.sfd, 5);
 
-    /* startup info maybe */
+    /* display info on startup */
     printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
            get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
     );
     st.verbose = 1;
 
     while(!st.exit) {
-        client_t *c;
+        while((ffi = getcid(clbuf, MAX_CLIENT_COUNT)) < 0) {
+            /* too much clients */
+            if(!st.dos) {
+                printf("[%s] DOS - to much clients, server over capacity\n", timestamp(st.tmr_buf));
+                st.dos = 1;
+            }
+        }
+        st.dos = 0;
+        c = clbuf[ffi];
+
         c = malloc(sizeof(client_t));
         if(!c){
             perror("Problems with memory");
             exit(EXIT_FAILURE);
         }
+        c->cid = ffi;
         st.c = c;
         ptid = &c->tid;
         l = sizeof(c->caddr);
