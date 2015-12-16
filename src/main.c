@@ -21,7 +21,7 @@
 
 status_t st;
 
-/* client_t clbuff[MAX_CLIENTS]; */
+/* client_t clbuff[MAX_CLIENT_COUNT]; */
 
 void *cthread(void *arg);
 
@@ -30,10 +30,6 @@ void s_safe_exit(int sig)
     if(sig) {
         printf("\rGot signal %d\n", sig);
     }
-/*    if(pthread_join(st.c->tid, NULL)) {
-        puts("Joining client thread went wrong");
-
-    } */
     if(st.c != NULL) {
         free(st.c);
     }
@@ -61,25 +57,17 @@ void *cthread(void *cln)
 {
     struct client_t *c = cln;
 
-    char pass_buf[PASS_LENGTH], valid_pass[PASS_LENGTH];
+    char pass_buf[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
     char connect;
     int i, j;
 
     /* set buffers */
     memset(pass_buf, '\0', PASS_LENGTH);
-    memset(valid_pass, '\0', PASS_LENGTH);
-    strncpy(valid_pass, "PASS\0", PASS_LENGTH);
 
     /* Authenticate */
     i = read(c->cfd, &pass_buf, PASS_LENGTH);
-
-    if((memcmp(valid_pass, pass_buf, PASS_LENGTH - 1))/* || (i != PASS_LENGTH) */) {
-        printf("Client authentication failed: got %s [%d] expected %s [%d]\n",
-                pass_buf, i, valid_pass, PASS_LENGTH);
-        for(i=0; i < PASS_LENGTH; ++i) {
-            printf("[%d] %c{%d} -  %c{%d}\n", i, pass_buf[i], pass_buf[i], valid_pass[i], valid_pass[i]);
-        }
+    if(!conf_pswd(pass_buf, i)) {
         ct_close(c);
     }
 
@@ -89,8 +77,6 @@ void *cthread(void *cln)
     st.exit = 0;
     connect = 1;
 /*
-    st.exit = 1;
-    ct_close(c);
 
     write(c->cfd, "Client accepted", 17);
     send JSON with mp3 root
@@ -138,8 +124,8 @@ void *cthread(void *cln)
     } while(connect && !st.exit);
 
     ct_close(c);
-/*    kill(getpid(), SIGINT); */
-    return 0;
+
+     return 0;
 }
 
 

@@ -101,4 +101,25 @@ int dump_incoming_buffer(int cfd, int ofd, int count)
     return c;
 }
 
+char conf_pswd(char *pass, int count)
+{
+    char valid_pass[PASS_LENGTH];
+
+    memset(valid_pass, '\0', PASS_LENGTH);
+    strncpy(valid_pass, "PASS\0", PASS_LENGTH);
+
+    if((memcmp(valid_pass, pass, PASS_LENGTH - 1)) || (count != PASS_LENGTH) ) {
+#ifdef DEBUG
+        int i;
+        for(i=0; i < PASS_LENGTH; ++i) {
+            printf("[%d] %c{%d} -  %c{%d}\n", i, pass[i], pass[i],
+                                        valid_pass[i], valid_pass[i]);
+        }
+#endif
+        printf("Client authentication failed: got %s [%d] expected %s [%d]\n",
+                pass, count, valid_pass, PASS_LENGTH);
+        return 0;
+    }
+    return 1;
+}
 

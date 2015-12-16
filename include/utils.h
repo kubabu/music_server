@@ -8,7 +8,11 @@
 
 #define COMMAND_MAX_LEN 512
 
-#define MAX_CLIENTS 512
+#define MAX_CLIENT_COUNT 512
+
+/* Serious business */
+#define PASS_LENGTH 5
+#define PASS 'root'
 
 /* Global structure with configuration */
 typedef struct status_t {
@@ -35,5 +39,7 @@ struct client_t {
 char *timestamp(char timer_buffer[TIME_BUFLEN]);
 
 char *get_ip(char *buff);
+
+char conf_pswd(char *pass, int c);
 
 #endif
