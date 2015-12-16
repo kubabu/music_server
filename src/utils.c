@@ -109,3 +109,14 @@ int getcid(client_t **buf, int max)
     }
     return -1;
 }
+
+int printcl(client_t *cl, int i)
+{
+    if(cl == NULL) {
+        printf("Cl %d empty \n", i);
+        return -1;
+    }
+    printf("___\n|cfd=%d\n|cid=%d\n|tid=%d\n", cl->cfd, cl->cid, (int)cl->tid);
+    return cl->cid;
+}
+

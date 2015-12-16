@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -25,18 +26,24 @@ client_t *clbuf[MAX_CLIENT_COUNT];
 
 void *cthread(void *arg);
 
-int ct_close(client_t *c)
+int ct_close(client_t *c, int ex_call)
 {
-    printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
-            c->cid, (int)pthread_self());
     if(c != NULL) {
-        close(c->cfd);
+        printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
+                c->cid, (int)pthread_self());
+        printcl(c, -1);
+        if(fcntl(c->cfd, F_GETFD)) {
+            close(c->cfd);
+        }
         free(c);
     }
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
-    pthread_exit(NULL);
+    if(!ex_call) {
+        pthread_exit(NULL);
+    }
+    return 0;
 }
 
 
@@ -50,9 +57,9 @@ void s_safe_exit(int sig)
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
         if(clbuf[i] != NULL) {
-            ct_close(clbuf[i]);
-/*/            pthread_cancel(clbuf[i]->tid); */
-            free(clbuf[i]);
+            pthread_cancel(clbuf[i]->tid);
+            ct_close(clbuf[i], 1);
+/*            free(clbuf[i]); */
         }
     }
     if(st.c != NULL) {
@@ -82,7 +89,7 @@ void *cthread(void *cln)
         printf("[%s] Request from IP %s port %d [client %d {%d}] failed to authenticate\n",
                timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
                c->caddr.sin_port, c->cid, (int)pthread_self());
-        ct_close(c);
+        ct_close(c, 0);
     }
 
     /* Log info */
@@ -128,7 +135,7 @@ void *cthread(void *cln)
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     st.exit = 1;
-                    ct_close(c);
+                    ct_close(c, 0);
                 }
 
             default:
@@ -139,7 +146,7 @@ void *cthread(void *cln)
         }
     } while(connect && !st.exit);
 
-    ct_close(c);
+    ct_close(c, 0);
 
      return 0;
 }
@@ -203,10 +210,9 @@ int main(int argc, char *argv[])
         }
         st.dos = 0;
 
-        c = clbuf[ffi];
-
         c = malloc(sizeof(client_t));
-        if(!c){
+        /*c = clbuf[ffi]; */
+        if(c == NULL){
             perror("Problems with memory");
             s_safe_exit(EXIT_FAILURE);
         }
@@ -221,9 +227,11 @@ int main(int argc, char *argv[])
             } else {
                 s_safe_exit(0);
             }
+        } else {
+            clbuf[ffi] = c;
+            pthread_create(ptid, NULL, cthread, clbuf[ffi]);
+            pthread_detach(*ptid);
         }
-        pthread_create(ptid, NULL, cthread, c);
-        pthread_detach(*ptid);
     }
     s_safe_exit(0);
 

@@ -62,7 +62,7 @@ clean:
 ## tests in make are only temporary solution
 VALGRIND_FLAGS = --leak-check=full --track-origins=yes --show-leak-kinds=all
 ## tests together with builds is a mess and will be removed
-test_server_with_valgrind: server
+test_server_with_valgrind: clean_build
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server
 
 test_run_client: client
