@@ -26,24 +26,29 @@ client_t *clbuf[MAX_CLIENT_COUNT];
 
 void *cthread(void *arg);
 
-int ct_close(client_t *c, int ex_call)
+int client_close(client_t *c)
 {
     if(c != NULL) {
-        printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
-                c->cid, (int)pthread_self());
-        printcl(c, -1);
+
         if(fcntl(c->cfd, F_GETFD)) {
             close(c->cfd);
         }
+        clbuf[c->cid] = NULL;
         free(c);
     }
+
+    return 0;
+}
+
+void ct_close(client_t *c)
+{
+    printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
+           c->cid, (int)pthread_self());
+    client_close(c);
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
-    if(!ex_call) {
-        pthread_exit(NULL);
-    }
-    return 0;
+    pthread_exit(NULL);
 }
 
 
@@ -58,7 +63,7 @@ void s_safe_exit(int sig)
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
         if(clbuf[i] != NULL) {
             pthread_cancel(clbuf[i]->tid);
-            ct_close(clbuf[i], 1);
+            client_close(clbuf[i]);
 /*            free(clbuf[i]); */
         }
     }
@@ -89,7 +94,7 @@ void *cthread(void *cln)
         printf("[%s] Request from IP %s port %d [client %d {%d}] failed to authenticate\n",
                timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
                c->caddr.sin_port, c->cid, (int)pthread_self());
-        ct_close(c, 0);
+        ct_close(c);
     }
 
     /* Log info */
@@ -135,7 +140,7 @@ void *cthread(void *cln)
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     st.exit = 1;
-                    ct_close(c, 0);
+                    ct_close(c);
                 }
 
             default:
@@ -146,7 +151,7 @@ void *cthread(void *cln)
         }
     } while(connect && !st.exit);
 
-    ct_close(c, 0);
+    ct_close(c);
 
      return 0;
 }
@@ -211,13 +216,13 @@ int main(int argc, char *argv[])
         st.dos = 0;
 
         c = malloc(sizeof(client_t));
+        st.c = c;
         /*c = clbuf[ffi]; */
         if(c == NULL){
             perror("Problems with memory");
             s_safe_exit(EXIT_FAILURE);
         }
         c->cid = ffi;
-        st.c = c;
         ptid = &c->tid;
         l = sizeof(c->caddr);
 
