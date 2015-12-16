@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
     char cmd_buf[COMMAND_MAX_LEN];
     struct sockaddr_in serv_addr;
     struct hostent *host_addr;
+    time_t tmr;
 
     signal(SIGINT, safe_exit);
     signal(SIGQUIT, safe_exit);
@@ -110,8 +111,9 @@ int main(int argc, char *argv[])
         }
     } else {
         printf("<REPL mode>\n");
+        timeout_update(&tmr);
 
-        while(1) {
+        while(!timeout(&tmr, CLIENT_TIMEOUT_SEC)) {
             m = sizeof(n);
             con = getsockopt(fd, SOL_SOCKET, SO_ERROR, &n, &m);
             if(con) {

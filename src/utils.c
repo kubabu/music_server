@@ -7,26 +7,20 @@
 
 #include "utils.h"
 
-#define TIMEOUT_SEC     2
 
 
 /* low resolution timeout counter */
-static time_t tmr;
-
-void tmr_update(void)
+char timeout(time_t *t, int lim)
 {
-    time(&tmr);
+    if(*t + lim > time(NULL)) {
+        return 0;
+    }
+    return 1;
 }
 
-char timeout(void)
+void timeout_update(time_t *t)
 {
-    time_t cur_tmr;
-    time(&cur_tmr);
-
-    if((cur_tmr - TIMEOUT_SEC) > tmr) {
-        return 1;
-    }
-    return 0;
+    time(t);
 }
 
 

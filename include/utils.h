@@ -8,7 +8,9 @@
 
 #define COMMAND_MAX_LEN 512
 
-#define MAX_CLIENT_COUNT 2
+#define CLIENT_TIMEOUT_SEC      2
+
+#define MAX_CLIENT_COUNT        5
 
 /* Serious business */
 #define PASS_LENGTH 5
@@ -37,6 +39,12 @@ typedef struct status_t {
     int sfd;
     client_t *c;
 } status_t;
+
+
+/* low resolution [1 s] timeout detection */
+char timeout(time_t *t, int lim);
+
+void timeout_update(time_t *t);
 
 
 /* printable timestamp */

@@ -24,7 +24,7 @@ status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
 
 
-void *cthread(void *arg);
+void *client_thread(void *arg);
 
 int client_close(client_t *c)
 {
@@ -76,7 +76,7 @@ void s_safe_exit(int sig)
 }
 
 
-void *cthread(void *cln)
+void *client_thread(void *cln)
 {
     client_t *c = cln;
 
@@ -145,7 +145,7 @@ void *cthread(void *cln)
 
             default:
                 if(j) {
-                    printf("[%s]Client %d {%d}: invalid command\n", timestamp(st.tmr_buf),
+                    printf("[%s] Client %d {%d}: invalid command\n", timestamp(st.tmr_buf),
                             c->cid, (int)pthread_self());
                 }
         }
@@ -205,6 +205,7 @@ int main(int argc, char *argv[])
     while(!st.exit) {
         while((ffi = getcid(clbuf, MAX_CLIENT_COUNT)) < 0) {
             /* too much clients */
+            sleep(1); /* veery fine but works */
             if(!st.dos) {
                 printf("[%s] DOS - to much clients, server over capacity\n", timestamp(st.tmr_buf));
                 st.dos = 1;
@@ -234,7 +235,7 @@ int main(int argc, char *argv[])
             }
         } else {
             clbuf[ffi] = c;
-            pthread_create(ptid, NULL, cthread, clbuf[ffi]);
+            pthread_create(ptid, NULL, client_thread, clbuf[ffi]);
             pthread_detach(*ptid);
         }
     }
