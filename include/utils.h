@@ -17,6 +17,7 @@
 /* aggregate parameters for client thread */
 typedef struct client_t {
     int cfd;
+    int cid;
     struct sockaddr_in caddr;
     pthread_t tid;
 } client_t;
@@ -27,6 +28,7 @@ typedef struct status_t {
     char *l_s_root;
 
     char verbose;
+    char dos;
     char exit;
 
     char tmr_buf[TIME_BUFLEN];
@@ -46,7 +48,7 @@ char *get_ip(char *buff);
 /* check if client authenticated properly */
 char conf_pswd(char *pass, int c);
 
-/* get first free index of pointers array */
-int getffi(void **buf, int max);
+/* get client ID - first free index of pointers array */
+int getcid(client_t **buf, int max);
 
 #endif
