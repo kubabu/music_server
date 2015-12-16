@@ -2,18 +2,18 @@
   #define _utils_h
 #include <netinet/in.h>
 
-#define SERV_DEF_PORT    1234
-#define TIME_BUFLEN 26
-#define IP_BUFLEN 26
+#define SERV_DEF_PORT           1234
+#define TIME_BUFLEN             26
+#define IP_BUFLEN               26
 
-#define COMMAND_MAX_LEN 512
-
+#define COMMAND_MAX_LEN         512
+#define IO_BUF_SIZE             512
 #define CLIENT_TIMEOUT_SEC      2
 
 #define MAX_CLIENT_COUNT        5
 
 /* Serious business */
-#define PASS_LENGTH 5
+#define PASS_LENGTH             5
 #define PASS 'root'
 
 /* aggregate parameters for client thread */
@@ -40,12 +40,20 @@ typedef struct status_t {
     client_t *c;
 } status_t;
 
+/* Circular buffer */
+typedef struct io_buffer {
+    char data[IO_BUF_SIZE];
+    int ni;
+    int oi;
+} io_buffer;
+
+enum BufferStatus {BUFFER_OK, BUFFER_EMPTY, BUFFER_FULL};
+
 
 /* low resolution [1 s] timeout detection */
 char timeout(time_t *t, int lim);
 
 void timeout_update(time_t *t);
-
 
 /* printable timestamp */
 char *timestamp(char timer_buffer[TIME_BUFLEN]);

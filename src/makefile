@@ -35,7 +35,7 @@ LDFLAGS += -L$(CURLBIN)
 ## Generic rules
 ## Build object files as non executable
 $(ODIR)/%.o: %.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c $< $(CFLAGS) -o $@
 
 ## Exact rules
 all: server client

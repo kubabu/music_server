@@ -29,10 +29,7 @@ void *client_thread(void *arg);
 int client_close(client_t *c)
 {
     if(c != NULL) {
-
-        if(fcntl(c->cfd, F_GETFD)) {
-            close(c->cfd);
-        }
+        close(c->cfd);
         clbuf[c->cid] = NULL;
         free(c);
     }
