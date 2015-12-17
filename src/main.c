@@ -51,8 +51,9 @@ void ct_close(client_t *c)
 
 void s_safe_exit(int sig)
 {
-    int i;
+    int i, me;
 
+    me = -1;
     if(sig) {
         printf("\rGot signal %d\n", sig);
     }
@@ -60,15 +61,23 @@ void s_safe_exit(int sig)
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
         if(clbuf[i] != NULL) {
-            pthread_cancel(clbuf[i]->tid);
-            client_close(clbuf[i]);
+            if(clbuf[i]->tid == pthread_self()) {
+                me = i;
+            } else {
+                pthread_join(clbuf[i]->tid, NULL);
+                client_close(clbuf[i]);
+            }
         }
     }
-    if(st.c != NULL) {
+    if(st.c != NULL && me != -1 && clbuf[i] != st.c) {
         free(st.c);
     }
     close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
+    if(me != -1) {
+        pthread_exit(NULL);
+    }
+
     exit(EXIT_SUCCESS);
 }
 
@@ -230,9 +239,11 @@ int main(int argc, char *argv[])
                 s_safe_exit(0);
             }
         } else {
-            clbuf[ffi] = c;
-            pthread_create(ptid, NULL, client_thread, clbuf[ffi]);
-            pthread_detach(*ptid);
+            if(!st.exit) {
+                clbuf[ffi] = c;
+                pthread_create(ptid, NULL, client_thread, c);
+                pthread_detach(*ptid);
+            }
         }
     }
     s_safe_exit(0);
