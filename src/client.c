@@ -18,17 +18,19 @@
 /* This client is intended only for server testing */
 
 int conn_fd;
-pthread_t rd;
+pthread_t main_th, rd_th;
 io_buffer_t sockrd;
 
 
 void *rdthread(void *buf)
 {
-    io_buffer_t *rdbuf = (io_buffer_t *)buf;
+    io_buffer_t *rdbuf = io_buf_init(buf);
+
     char c, read_on;
+    read_on = 1;
 
     while(read_on) {
-        c = read(conn_fd, &c, 1);
+        read(conn_fd, &c, 1);
         if(c == EOF) {
             read_on = 0;
         }
@@ -37,6 +39,10 @@ void *rdthread(void *buf)
         while(rdbuf->st == BUFFER_FULL) {
             sleep(1);
         }
+    }
+
+    if(rdbuf != buf) {
+        free(buf);
     }
 
     return 0;
@@ -51,6 +57,7 @@ void conn_close(int conn_fd)
 
 void safe_exit(int sig)
 {
+    shutdown(conn_fd, SHUT_RDWR);
     conn_close(conn_fd);
     close(conn_fd);
     if(sig) {
@@ -58,7 +65,13 @@ void safe_exit(int sig)
     } else {
         printf("\rClosing test client...\n");
     }
-    exit(EXIT_SUCCESS);
+    if(pthread_self() == main_th) {
+        pthread_cancel(rd_th);
+        pthread_cancel(rd_th);
+    } else {
+        pthread_exit(NULL);
+    }
+     exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -72,6 +85,7 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, safe_exit);
     signal(SIGQUIT, safe_exit);
+    main_th = pthread_self();
     memset(cmd_buf, '\0', COMMAND_MAX_LEN);
 
     if(argc < 3) {
@@ -120,7 +134,9 @@ int main(int argc, char *argv[])
         printf("<REPL mode>\n");
         timeout_update(&tmr);
 
-        while(!timeout(&tmr, CLIENT_TIMEOUT_SEC)) {
+        pthread_create(&rd_th, NULL, rdthread, &sockrd);
+
+        while(!timeout(&tmr, CLIENT_CMD_TIMEOUT_SEC)) {
             m = sizeof(n);
             con = getsockopt(fd, SOL_SOCKET, SO_ERROR, &n, &m);
             if(con) {
@@ -129,6 +145,7 @@ int main(int argc, char *argv[])
             }
             read(STDIN_FILENO, cmd_buf, 1);
             write(fd, cmd_buf, 1);
+            timeout_update(&tmr);
 /*            n = 0;
             memset(cmd_buf, '\0', COMMAND_MAX_LEN);
             for(n = 0; n < COMMAND_MAX_LEN; n++) {

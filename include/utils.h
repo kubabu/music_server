@@ -9,6 +9,8 @@
 #define COMMAND_MAX_LEN         512
 #define IO_BUF_SIZE             512
 #define CLIENT_TIMEOUT_SEC      2
+#define CLIENT_CMD_TIMEOUT_SEC      7
+#define CLIENT_CON_TIMEOUT_SEC      2
 
 #define MAX_CLIENT_COUNT        5
 
@@ -49,6 +51,9 @@ typedef struct io_buffer_t {
     int oi;
     io_buf_status st;
 } io_buffer_t;
+
+/* avoid reading uninitialized values */
+io_buffer_t *io_buf_init(io_buffer_t *buf);
 
 io_buf_status io_buf_write(io_buffer_t *buf, char c);
 

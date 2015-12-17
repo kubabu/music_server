@@ -7,6 +7,17 @@
 
 #include "utils.h"
 
+io_buffer_t *io_buf_init(io_buffer_t *buf)
+{
+    if(buf == NULL) {
+        buf = malloc(sizeof(io_buffer_t));
+    }
+    buf->ni = 0;
+    buf->oi = 0;
+    buf->st = BUFFER_EMPTY;
+
+    return buf;
+}
 
 io_buf_status io_buf_write(io_buffer_t *buf, char c)
 {
