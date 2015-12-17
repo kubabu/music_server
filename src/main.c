@@ -56,12 +56,12 @@ void s_safe_exit(int sig)
     if(sig) {
         printf("\rGot signal %d\n", sig);
     }
+    st.exit = 1;
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
         if(clbuf[i] != NULL) {
             pthread_cancel(clbuf[i]->tid);
             client_close(clbuf[i]);
-/*            free(clbuf[i]); */
         }
     }
     if(st.c != NULL) {
@@ -99,11 +99,10 @@ void *client_thread(void *cln)
             inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, c->cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
-/*
 
     write(c->cfd, "Client accepted", 17);
+/*
     send JSON with mp3 root
-    write(c->cfd, "Kuba Buda 119507", 16);
     */
      do {
         /* listen for client commands */

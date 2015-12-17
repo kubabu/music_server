@@ -8,13 +8,14 @@
 #include "utils.h"
 
 
-io_buf_status io_buf_write(io_buffer *buf, char c)
+io_buf_status io_buf_write(io_buffer_t *buf, char c)
 {
     int ni = (buf->ni + 1) % IO_BUF_SIZE;
 
     if(ni == buf->oi) {
         buf->st = BUFFER_FULL;
         return BUFFER_FULL;
+
     }
     buf->data[buf->ni] = c;
     buf->ni = ni;
@@ -23,7 +24,7 @@ io_buf_status io_buf_write(io_buffer *buf, char c)
     return BUFFER_OK;
 }
 
-io_buf_status io_buf_read(io_buffer *buf, char *c)
+io_buf_status io_buf_read(io_buffer_t *buf, char *c)
 {
 
     if(buf->oi == buf->ni) {
@@ -37,7 +38,7 @@ io_buf_status io_buf_read(io_buffer *buf, char *c)
     return BUFFER_EMPTY;
 }
 
-io_buf_status io_buf_peek(io_buffer *buf, char *c)
+io_buf_status io_buf_peek(io_buffer_t *buf, char *c)
 {
     int ni = (buf->ni + 1) % IO_BUF_SIZE;
 

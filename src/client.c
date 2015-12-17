@@ -1,14 +1,15 @@
-#include <assert.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <assert.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 /* #include "dbg.h" */
 #include "controls.h"
@@ -17,22 +18,28 @@
 /* This client is intended only for server testing */
 
 int conn_fd;
+pthread_t rd;
+io_buffer_t sockrd;
 
 
-void print_cmd_buf(char *buf, size_t n)
+void *rdthread(void *buf)
 {
-    assert(n < COMMAND_MAX_LEN);
-    /* make sure string is properly terminated */
-    if(n < COMMAND_MAX_LEN) {
-        buf[n] = '\0';
-    } else {
-        buf[COMMAND_MAX_LEN - 1] = '\0';
+    io_buffer_t *rdbuf = (io_buffer_t *)buf;
+    char c, read_on;
+
+    while(read_on) {
+        c = read(conn_fd, &c, 1);
+        if(c == EOF) {
+            read_on = 0;
+        }
+        printf("GOT{%c} [%d]\n", c, c);
+        io_buf_write(rdbuf, c);
+        while(rdbuf->st == BUFFER_FULL) {
+            sleep(1);
+        }
     }
-    write(1, buf, n);
-    /* be sure to add new line */
-    if((n > 0) && (buf[n - 1] != '\n')) {
-        printf("\n");
-    }
+
+    return 0;
 }
 
 void conn_close(int conn_fd)
