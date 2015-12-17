@@ -52,7 +52,12 @@ void ct_close(client_t *c)
 void s_safe_exit(int sig)
 {
     int i, me;
+    static int re;
 
+    if(re) {
+        return;
+    }
+    re = 1;
     me = -1;
     if(sig) {
         printf("\rGot signal %d\n", sig);
