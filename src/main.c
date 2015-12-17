@@ -202,8 +202,8 @@ int main(int argc, char *argv[])
     listen(st.sfd, 5);
 
     /* display info on startup */
-    printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d\n", (argv[0] + 2),
-           get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid()
+    printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n", (argv[0] + 2),
+           get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid(), sizeof(client_t)
     );
     st.verbose = 1;
 
