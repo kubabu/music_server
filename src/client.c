@@ -53,13 +53,13 @@ void conn_close(int conn_fd)
     char cmd;
     cmd = EOF;
     write(conn_fd, &cmd, 1);
+    close(conn_fd);
 }
 
 void safe_exit(int sig)
 {
     shutdown(conn_fd, SHUT_RDWR);
     conn_close(conn_fd);
-    close(conn_fd);
     if(sig) {
         printf("\rGot SIG%d, closing test client...\n", sig);
     } else {

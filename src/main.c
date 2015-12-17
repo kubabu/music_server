@@ -29,6 +29,8 @@ void *client_thread(void *arg);
 int client_close(client_t *c)
 {
     if(c != NULL) {
+        printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
+           c->cid, (int)pthread_self());
         close(c->cfd);
         clbuf[c->cid] = NULL;
         free(c);
@@ -39,12 +41,12 @@ int client_close(client_t *c)
 
 void ct_close(client_t *c)
 {
-    printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
-           c->cid, (int)pthread_self());
+    int n = c->cid;
     client_close(c);
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
+    printf("clbuf[%d] = %p\n", n, (void *)clbuf[n]);
     pthread_exit(NULL);
 }
 
@@ -86,6 +88,18 @@ void s_safe_exit(int sig)
     exit(EXIT_SUCCESS);
 }
 
+char ends_cmd(char c) {
+    switch(c) {
+        case '%':
+        case EOF:
+            return -1;
+        case '\0':
+        case '\r':
+        case '\n':
+            return 1;
+    }
+    return 0;
+}
 
 void *client_thread(void *cln)
 {
@@ -93,7 +107,7 @@ void *client_thread(void *cln)
 
     char pass_buf[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
-    char connect;
+    char cb, connect;
     int i, j;
 
     /* set buffers */
@@ -113,37 +127,28 @@ void *client_thread(void *cln)
             inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, c->cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
+    cb = ' ';
 
     write(c->cfd, "Client accepted", 17);
-/*
+    /*
     send JSON with mp3 root
     */
      do {
         /* listen for client commands */
+        i = 0;
         j = 0;
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
-        for(i = 0; i < COMMAND_MAX_LEN; i += j) {
-            j = read(c->cfd, &cmd_buf[i], 1);
-
-            switch(i){
-            case 0:
-                break;
-            case 1:
-                printf("[%d] %c=%d\n", 0, cmd_buf[0], cmd_buf[0]);
-            default:
-                printf("[%d] %c=%d\n", i, cmd_buf[i], cmd_buf[i]);
+        while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
+            j = read(c->cfd, &cb, 1);
+            if(j == 0 || (ends_cmd(cb) < 0)) {
+                connect = 0;
                 break;
             }
-            switch(cmd_buf[i]) {
-                case EOF:
-                    connect = 0;
-                case '\0':
-                case '\r':
-                case '\n':
-                    goto cmd_parse;
-                }
+            printf("[%d] %c=%d\n", 0, cmd_buf[i], cmd_buf[i]);
+            cmd_buf[i] = cb;
+            i += j;
         }
-    cmd_parse:
+        cmd_buf[i] = '\0';
         /* parse command */
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
             case 'e':
@@ -166,6 +171,26 @@ void *client_thread(void *cln)
      return 0;
 }
 
+int getffi(status_t s, client_t **cbuf) {
+    int n = getcid(cbuf, MAX_CLIENT_COUNT);
+
+    while(n < 0) {
+        n = getcid(cbuf, MAX_CLIENT_COUNT);
+        /* too much clients */
+        sleep(1); /* veery fine but works */
+        if(!s.dos) {
+            printf("[%s] DOS - to much clients, server over capacity\n", timestamp(st.tmr_buf));
+            s.dos = 1;
+        }
+    }
+    if(s.dos) {
+        printf("[%s] End of DOS - clients accepted back again\n", timestamp(st.tmr_buf));
+    }
+    st.dos = 0;
+
+    printf("getffi return %d\n", n);
+    return n;
+}
 
 int main(int argc, char *argv[])
 {
@@ -213,19 +238,7 @@ int main(int argc, char *argv[])
     st.verbose = 1;
 
     while(!st.exit) {
-        while((ffi = getcid(clbuf, MAX_CLIENT_COUNT)) < 0) {
-            /* too much clients */
-            sleep(1); /* veery fine but works */
-            if(!st.dos) {
-                printf("[%s] DOS - to much clients, server over capacity\n", timestamp(st.tmr_buf));
-                st.dos = 1;
-            }
-        }
-        if(st.dos) {
-            printf("[%s] End of DOS - clients accepted back again\n", timestamp(st.tmr_buf));
-        }
-        st.dos = 0;
-
+        ffi = getffi(st, clbuf);
         c = malloc(sizeof(client_t));
         st.c = c;
         /*c = clbuf[ffi]; */
