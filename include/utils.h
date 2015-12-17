@@ -41,13 +41,20 @@ typedef struct status_t {
 } status_t;
 
 /* Circular buffer */
+typedef enum io_buf_status {BUFFER_OK, BUFFER_EMPTY, BUFFER_FULL} io_buf_status;
+
 typedef struct io_buffer {
     char data[IO_BUF_SIZE];
     int ni;
     int oi;
+    io_buf_status st;
 } io_buffer;
 
-enum BufferStatus {BUFFER_OK, BUFFER_EMPTY, BUFFER_FULL};
+io_buf_status io_buf_write(io_buffer *buf, char c);
+
+io_buf_status io_buf_read(io_buffer *buf, char *c);
+
+io_buf_status io_buf_peek(io_buffer *buf, char *c);
 
 
 /* low resolution [1 s] timeout detection */

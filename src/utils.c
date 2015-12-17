@@ -8,6 +8,47 @@
 #include "utils.h"
 
 
+io_buf_status io_buf_write(io_buffer *buf, char c)
+{
+    int ni = (buf->ni + 1) % IO_BUF_SIZE;
+
+    if(ni == buf->oi) {
+        buf->st = BUFFER_FULL;
+        return BUFFER_FULL;
+    }
+    buf->data[buf->ni] = c;
+    buf->ni = ni;
+    buf->st = BUFFER_OK;
+
+    return BUFFER_OK;
+}
+
+io_buf_status io_buf_read(io_buffer *buf, char *c)
+{
+
+    if(buf->oi == buf->ni) {
+        buf->st = BUFFER_EMPTY;
+        return BUFFER_EMPTY;
+    }
+    *c = buf->data[buf->oi];
+    buf->oi = (buf->oi + 1) % IO_BUF_SIZE;
+    buf->st = BUFFER_OK;
+
+    return BUFFER_EMPTY;
+}
+
+io_buf_status io_buf_peek(io_buffer *buf, char *c)
+{
+    int ni = (buf->ni + 1) % IO_BUF_SIZE;
+
+    if(buf->ni == buf->oi) {
+        return BUFFER_EMPTY;
+    }
+    *c = buf->data[ni];
+
+    return BUFFER_OK;
+}
+
 
 /* low resolution timeout counter */
 char timeout(time_t *t, int lim)
