@@ -22,6 +22,7 @@
 
 status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
+pthread_mutex_t mx;
 
 
 void *client_thread(void *arg);
@@ -56,6 +57,7 @@ void s_safe_exit(int sig)
     int i, me;
     static int re;
 
+    pthread_mutex_lock(&mx);
     st.exit = 1;
     if(re) {
         return;
@@ -127,25 +129,26 @@ void *client_thread(void *cln)
             inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, c->cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
-    cb = ' ';
 
     write(c->cfd, "Client accepted", 17);
     /*
     send JSON with mp3 root
     */
-     do {
+     while(connect && !st.exit) {
         /* listen for client commands */
         i = 0;
         j = 0;
+        cb = ' ';
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
+
         while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
             j = read(c->cfd, &cb, 1);
             if(j == 0 || (ends_cmd(cb) < 0)) {
-                connect = 0;
+            /*    connect = 0; */
                 break;
             }
-            printf("[%d] %c=%d\n", 0, cmd_buf[i], cmd_buf[i]);
             cmd_buf[i] = cb;
+            printf("[%d] %c=%d\n", 0, cmd_buf[i], cmd_buf[i]);
             i += j;
         }
         cmd_buf[i] = '\0';
@@ -154,17 +157,18 @@ void *client_thread(void *cln)
             case 'e':
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
+                    connect = 0;
                     st.exit = 1;
                     ct_close(c);
                 }
 
             default:
-                if(j) {
-                    printf("[%s] Client %d {%d}: invalid command\n", timestamp(st.tmr_buf),
-                            c->cid, (int)pthread_self());
+                if(j && st.verbose) {
+                    printf("[%s] Client %d {%d}: invalid command\n",
+                        timestamp(st.tmr_buf), c->cid, (int)pthread_self());
                 }
         }
-    } while(connect && !st.exit);
+    }
 
     ct_close(c);
 
@@ -201,6 +205,7 @@ int main(int argc, char *argv[])
 
     signal(SIGQUIT, &s_safe_exit);
     signal(SIGINT, &s_safe_exit);
+    pthread_mutex_init(&mx, NULL);
 
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
@@ -255,12 +260,14 @@ int main(int argc, char *argv[])
                 s_safe_exit(0);
             }
         } else {
-            if(!st.exit) {
-                clbuf[ffi] = st.c;
-                pthread_create(ptid, NULL, client_thread, st.c);
-                pthread_detach(*ptid);
-            }
+            puts("Accepted");
+            pthread_mutex_lock(&mx);
+            clbuf[ffi] = st.c;
+            pthread_create(ptid, NULL, client_thread, st.c);
+            pthread_detach(*ptid);
+            pthread_mutex_unlock(&mx);
         }
+        st.c = NULL;
     }
     s_safe_exit(0);
 
