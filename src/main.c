@@ -56,6 +56,7 @@ void s_safe_exit(int sig)
     int i, me;
     static int re;
 
+    st.exit = 1;
     if(re) {
         return;
     }
@@ -64,7 +65,6 @@ void s_safe_exit(int sig)
     if(sig) {
         printf("\rGot signal %d\n", sig);
     }
-    st.exit = 1;
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
         if(clbuf[i] != NULL) {
@@ -76,7 +76,7 @@ void s_safe_exit(int sig)
             }
         }
     }
-    if(st.c != NULL && me != -1 && clbuf[i] != st.c) {
+    if(st.c != NULL) {
         free(st.c);
     }
     close_mp3();
@@ -197,7 +197,6 @@ int main(int argc, char *argv[])
     int ffi, sfd_on;
     socklen_t l;
     pthread_t *ptid;
-    client_t *c;
     struct sockaddr_in myaddr;
 
     signal(SIGQUIT, &s_safe_exit);
@@ -239,18 +238,17 @@ int main(int argc, char *argv[])
 
     while(!st.exit) {
         ffi = getffi(st, clbuf);
-        c = malloc(sizeof(client_t));
-        st.c = c;
+        st.c = malloc(sizeof(client_t));
         /*c = clbuf[ffi]; */
-        if(c == NULL){
+        if(st.c == NULL){
             perror("Problems with memory");
             s_safe_exit(EXIT_FAILURE);
         }
-        c->cid = ffi;
-        ptid = &c->tid;
-        l = sizeof(c->caddr);
-
-        if((c->cfd = accept(st.sfd, (struct sockaddr*)&c->caddr, &l)) < 0) {
+        st.c->cid = ffi;
+        ptid = &st.c->tid;
+        l = sizeof(st.c->caddr);
+        puts("Accepting");
+        if((st.c->cfd = accept(st.sfd, (struct sockaddr*)&st.c->caddr, &l)) < 0) {
             if(!st.exit) {
                 perror("Problem with accepting client");
             } else {
@@ -258,8 +256,8 @@ int main(int argc, char *argv[])
             }
         } else {
             if(!st.exit) {
-                clbuf[ffi] = c;
-                pthread_create(ptid, NULL, client_thread, c);
+                clbuf[ffi] = st.c;
+                pthread_create(ptid, NULL, client_thread, st.c);
                 pthread_detach(*ptid);
             }
         }
