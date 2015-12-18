@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -42,12 +41,10 @@ int client_close(client_t *c)
 
 void ct_close(client_t *c)
 {
-    int n = c->cid;
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
     client_close(c);
-    printf("clbuf[%d] = %p\n", n, (void *)clbuf[n]);
     pthread_exit(NULL);
 }
 
@@ -84,6 +81,7 @@ void s_safe_exit(int sig)
     close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
     if(me != -1) {
+        puts("Exit called form client thread");
         pthread_exit(NULL);
     }
 
@@ -192,7 +190,6 @@ int getffi(status_t s, client_t **cbuf) {
     }
     st.dos = 0;
 
-    printf("getffi return %d\n", n);
     return n;
 }
 
@@ -252,7 +249,7 @@ int main(int argc, char *argv[])
         st.c->cid = ffi;
         ptid = &st.c->tid;
         l = sizeof(st.c->caddr);
-        puts("Accepting");
+
         if((st.c->cfd = accept(st.sfd, (struct sockaddr*)&st.c->caddr, &l)) < 0) {
             if(!st.exit) {
                 perror("Problem with accepting client");
@@ -260,7 +257,6 @@ int main(int argc, char *argv[])
                 s_safe_exit(0);
             }
         } else {
-            puts("Accepted");
             pthread_mutex_lock(&mx);
             clbuf[ffi] = st.c;
             pthread_create(ptid, NULL, client_thread, st.c);
