@@ -43,10 +43,10 @@ int client_close(client_t *c)
 void ct_close(client_t *c)
 {
     int n = c->cid;
-    client_close(c);
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
+    client_close(c);
     printf("clbuf[%d] = %p\n", n, (void *)clbuf[n]);
     pthread_exit(NULL);
 }
@@ -144,7 +144,7 @@ void *client_thread(void *cln)
         while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
             j = read(c->cfd, &cb, 1);
             if(j == 0 || (ends_cmd(cb) < 0)) {
-            /*    connect = 0; */
+                connect = 0;
                 break;
             }
             cmd_buf[i] = cb;
