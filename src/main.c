@@ -26,8 +26,10 @@ pthread_mutex_t mx;
 
 void *client_thread(void *arg);
 
-int client_close(client_t *c)
+int client_close(int cid)
 {
+    client_t *c = clbuf[cid];
+
     if(c != NULL) {
         printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
            c->cid, (int)pthread_self());
@@ -39,12 +41,12 @@ int client_close(client_t *c)
     return 0;
 }
 
-void ct_close(client_t *c)
+void ct_close(int cid)
 {
     if(st.exit) {
         shutdown(st.sfd, SHUT_RDWR);
     }
-    client_close(c);
+    client_close(cid);
     pthread_exit(NULL);
 }
 
@@ -61,8 +63,11 @@ void s_safe_exit(int sig)
     }
     re = 1;
     me = -1;
+    timestamp(st.tmr_buf);
     if(sig) {
-        printf("\rGot signal %d\n", sig);
+        printf("\r[%s] Got signal %d\n", st.tmr_buf, sig);
+    } else {
+        printf("\r[%s] Client ordered server shutdown\n", st.tmr_buf);
     }
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
@@ -70,13 +75,14 @@ void s_safe_exit(int sig)
             if(clbuf[i]->tid == pthread_self()) {
                 me = i;
             } else {
-                pthread_join(clbuf[i]->tid, NULL);
-                client_close(clbuf[i]);
+                /* pthread_join(clbuf[i]->tid, NULL); */
+                pthread_cancel(clbuf[i]->tid);
+                ct_close(i);
             }
         }
     }
-    if(st.c != NULL) {
-        free(st.c);
+    if(st.last_client != NULL) {
+        free(st.last_client);
     }
     close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
@@ -103,12 +109,18 @@ char ends_cmd(char c) {
 
 void *client_thread(void *cln)
 {
-    client_t *c = cln;
-
     char pass_buf[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
     char cb, connect;
-    int i, j;
+    int cid, i, j;
+
+    client_t *c = cln;
+    cid = c->cid;
+
+    if(c != clbuf[c->cid]) {
+        printf("[ERROR] Invalid client data passing\n");
+        return 0;
+    }
 
     /* set buffers */
     memset(pass_buf, '\0', PASS_LENGTH);
@@ -118,13 +130,13 @@ void *client_thread(void *cln)
     if(!conf_pswd(pass_buf, i)) {
         printf("[%s] Request from IP %s port %d [client %d {%d}] failed to authenticate\n",
                timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
-               c->caddr.sin_port, c->cid, (int)pthread_self());
-        ct_close(c);
+               c->caddr.sin_port, cid, (int)pthread_self());
+        ct_close(cid);
     }
 
     /* Log info */
     printf("[%s] Accepted request from IP %s port %d as client %d {%d}\n", timestamp(st.tmr_buf),
-            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, c->cid, (int)pthread_self());
+            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
 
@@ -157,18 +169,18 @@ void *client_thread(void *cln)
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     connect = 0;
                     st.exit = 1;
-                    ct_close(c);
+                    ct_close(cid);
                 }
 
             default:
                 if(j && st.verbose) {
                     printf("[%s] Client %d {%d}: invalid command\n",
-                        timestamp(st.tmr_buf), c->cid, (int)pthread_self());
+                        timestamp(st.tmr_buf), cid, (int)pthread_self());
                 }
         }
     }
 
-    ct_close(c);
+    ct_close(cid);
 
      return 0;
 }
@@ -199,6 +211,8 @@ int main(int argc, char *argv[])
     socklen_t l;
     pthread_t *ptid;
     struct sockaddr_in myaddr;
+    struct sockaddr *client_addr;
+    st.mid = pthread_self();
 
     signal(SIGQUIT, &s_safe_exit);
     signal(SIGINT, &s_safe_exit);
@@ -237,33 +251,35 @@ int main(int argc, char *argv[])
            get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid(), sizeof(client_t)
     );
     st.verbose = 1;
+    l = sizeof(st.last_client->caddr);
 
+    /* main loop */
     while(!st.exit) {
         ffi = getffi(st, clbuf);
-        st.c = malloc(sizeof(client_t));
-        /*c = clbuf[ffi]; */
-        if(st.c == NULL){
+        st.last_client = malloc(sizeof(client_t));
+        if(st.last_client == NULL){
             perror("Problems with memory");
             s_safe_exit(EXIT_FAILURE);
         }
-        st.c->cid = ffi;
-        ptid = &st.c->tid;
-        l = sizeof(st.c->caddr);
+        st.last_client->cid = ffi;
+        ptid = &st.last_client->tid;
+        client_addr = (struct sockaddr*)&st.last_client->caddr;
 
-        if((st.c->cfd = accept(st.sfd, (struct sockaddr*)&st.c->caddr, &l)) < 0) {
+        if((st.last_client->cfd = accept(st.sfd, client_addr, &l)) < 0) {
             if(!st.exit) {
                 perror("Problem with accepting client");
             } else {
                 s_safe_exit(0);
             }
         } else {
+            /* safely create thread to serve client */
             pthread_mutex_lock(&mx);
-            clbuf[ffi] = st.c;
-            pthread_create(ptid, NULL, client_thread, st.c);
+            clbuf[ffi] = st.last_client;
+            pthread_create(ptid, NULL, client_thread, st.last_client);
             pthread_detach(*ptid);
             pthread_mutex_unlock(&mx);
         }
-        st.c = NULL;
+        st.last_client = NULL;
     }
     s_safe_exit(0);
 

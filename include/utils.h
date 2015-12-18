@@ -39,7 +39,8 @@ typedef struct status_t {
     char ip_buffer[26];
     int port;
     int sfd;
-    client_t *c;
+    client_t *last_client;
+    pthread_t mid;
 } status_t;
 
 /* Circular buffer */
