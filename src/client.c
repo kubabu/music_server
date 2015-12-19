@@ -17,26 +17,31 @@
 
 /* This client is intended only for server testing */
 
+char read_on;
 int conn_fd;
 pthread_t main_th, rd_th;
 io_buffer_t sockrd;
+
+
+void safe_exit(int sig);
 
 
 void *rdthread(void *buf)
 {
     io_buffer_t *rdbuf = io_buf_init(buf);
 
-    char c, read_on;
-    read_on = 1;
+    char c = '\0';
 
     while(read_on) {
         read(conn_fd, &c, 1);
         if(c == EOF) {
             read_on = 0;
+            printf("Got EOF from server");
+            break;
         }
         printf("GOT{%c} [%d]\n", c, c);
         io_buf_write(rdbuf, c);
-        while(rdbuf->st == BUFFER_FULL) {
+        while(rdbuf->st == BUFFER_FULL && read_on) {
             sleep(1);
         }
     }
@@ -44,7 +49,7 @@ void *rdthread(void *buf)
     if(rdbuf != buf) {
         free(buf);
     }
-
+    safe_exit(0);
     return 0;
 }
 
@@ -58,6 +63,7 @@ void conn_close(int conn_fd)
 
 void safe_exit(int sig)
 {
+    read_on = 0;
     shutdown(conn_fd, SHUT_RDWR);
     conn_close(conn_fd);
     if(sig) {
@@ -66,10 +72,10 @@ void safe_exit(int sig)
         printf("\rClosing test client...\n");
     }
     if(pthread_self() == main_th) {
-        pthread_cancel(rd_th);
-        pthread_cancel(rd_th);
+        pthread_join(rd_th, NULL);
     } else {
-        pthread_exit(NULL);
+       /* pthread_exit(NULL); */
+        puts("exit from rdthread");
     }
      exit(EXIT_SUCCESS);
 }
@@ -85,6 +91,7 @@ int main(int argc, char *argv[])
 
     signal(SIGINT, safe_exit);
     signal(SIGQUIT, safe_exit);
+    read_on = 1;
     main_th = pthread_self();
     memset(cmd_buf, '\0', COMMAND_MAX_LEN);
 
@@ -136,7 +143,7 @@ int main(int argc, char *argv[])
 
         pthread_create(&rd_th, NULL, rdthread, &sockrd);
 
-        while(!timeout(&tmr, CLIENT_CMD_TIMEOUT_SEC)) {
+        while(!timeout(&tmr, CLIENT_CMD_TIMEOUT_SEC) && read_on) {
             m = sizeof(n);
             con = getsockopt(fd, SOL_SOCKET, SO_ERROR, &n, &m);
             if(con) {

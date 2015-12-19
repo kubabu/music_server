@@ -17,10 +17,12 @@
 #include "mplayer.h"
 #include "utils.h"
 
-
+#define DEBUG
+#define DETACHED
 
 status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
+pthread_t main_th;
 pthread_mutex_t mx;
 
 
@@ -34,8 +36,10 @@ int client_close(int cid)
         shutdown(st.sfd, SHUT_RDWR);
     }
     if(c != NULL) {
+        char end = EOF;
         printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
            c->cid, (int)pthread_self());
+        write(c->cfd, &end, 1);
         close(c->cfd);
         clbuf[c->cid] = NULL;
         free(c);
@@ -46,6 +50,14 @@ int client_close(int cid)
 
 void ct_close(int cid)
 {
+#ifdef DEBUG
+    client_t *c = clbuf[cid];
+
+    if(c != NULL) {
+        printf("[%s] Client %d {thread %d} ordering to disconnect itself \n", timestamp(st.tmr_buf),
+           c->cid, (int)pthread_self());
+    }
+#endif
     client_close(cid);
     pthread_exit(NULL);
 }
@@ -75,20 +87,24 @@ void s_safe_exit(int sig)
             if(clbuf[i]->tid == pthread_self()) {
                 me = i;
             } else {
-                /* pthread_join(clbuf[i]->tid, NULL); */
+#ifdef DETACHED
                 pthread_cancel(clbuf[i]->tid);
+#else
+                pthread_join(clbuf[i]->tid, NULL);
+#endif
                 client_close(i);
             }
         }
     }
-    if(st.last_client != NULL) {
+
+    if(st.last_client != NULL || me != -1) {
         free(st.last_client);
     }
     close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
-    if(me != -1) {
+    if(pthread_self() != main_th) {
         puts("Exit called form client thread");
-        pthread_exit(NULL);
+/*/        pthread_exit(NULL); */
     }
 
     exit(EXIT_SUCCESS);
@@ -219,7 +235,9 @@ int main(int argc, char *argv[])
 
     signal(SIGQUIT, &s_safe_exit);
     signal(SIGINT, &s_safe_exit);
+
     pthread_mutex_init(&mx, NULL);
+    main_th = pthread_self();
 
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
@@ -279,7 +297,9 @@ int main(int argc, char *argv[])
             pthread_mutex_lock(&mx);
             clbuf[ffi] = st.last_client;
             pthread_create(ptid, NULL, client_thread, st.last_client);
+#ifdef DETACHED
             pthread_detach(*ptid);
+#endif
             pthread_mutex_unlock(&mx);
         }
         st.last_client = NULL;

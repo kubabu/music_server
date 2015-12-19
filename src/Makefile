@@ -9,7 +9,7 @@ LDIR =../lib
 BINDIR=../bin
 
 ## Libraries
-LIBS=-pthread
+LIBS=-pthread -lgcc_s
 LIBINCLUDE=$(LDIR)
 LIBBIN=$(LDIR)
 CFLAGS+=-I$(LIBINCLUDE)
