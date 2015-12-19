@@ -17,8 +17,10 @@
 #include "mplayer.h"
 #include "utils.h"
 
+
 #define DEBUG
 #define DETACHED
+
 
 status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
@@ -33,8 +35,10 @@ int client_close(int cid)
 
     if(c != NULL) {
         char end = EOF;
-        printf("[%s] Client %d {%d} disconnecting \n", timestamp(st.tmr_buf),
-           c->cid, (int)pthread_self());
+        if(st.verbose) {
+            printf("[%s] Client %d {%d} disconnecting \n", timestamp(st.tmr_buf),
+                   c->cid, (int)pthread_self());
+        }
         write(c->cfd, &end, 1);
         close(c->cfd);
         clbuf[c->cid] = NULL;
@@ -49,14 +53,14 @@ int client_close(int cid)
 
 void ct_close(int cid)
 {
-#ifdef DEBUG
-    client_t *c = clbuf[cid];
+    if(st.verbose) {
+        client_t *c = clbuf[cid];
 
-    if(c != NULL) {
-        printf("[%s] Client %d {thread %d} ordering to disconnect itself \n", timestamp(st.tmr_buf),
-           c->cid, (int)pthread_self());
+        if(c != NULL) {
+            printf("[%s] Client %d {thread %d} ordering to disconnect itself \n",
+                    timestamp(st.tmr_buf), c->cid, (int)pthread_self());
+        }
     }
-#endif
     client_close(cid);
     pthread_exit(NULL);
 }
