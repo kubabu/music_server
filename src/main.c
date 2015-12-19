@@ -125,12 +125,41 @@ char ends_cmd(char c) {
     return 0;
 }
 
+
+int read_command(char *buf, int buflen, int sock_fd, char *con_on)
+{
+    char cb;
+    int i, j;
+
+    i = 0;
+    j = 0;
+    cb = ' ';
+    memset(buf, '\0', buflen);
+
+    while(!ends_cmd(cb) && i < buflen && con_on) {
+        j = read(sock_fd, &cb, 1);
+        if(j == 0 || (ends_cmd(cb) < 0)) {
+            con_on = 0;
+            break;
+        }
+        buf[i] = cb;
+        if(st.verbose) {
+            printf("[] %c=%d\n", buf[i], buf[i]);
+        }
+        i += j;
+    }
+    buf[i] = '\0';
+
+    return i;
+}
+
+
 void *client_thread(void *cln)
 {
     char pass_buf[PASS_LENGTH];
     char cmd_buf[COMMAND_MAX_LEN];
-    char cb, connect;
-    int cid, i, j;
+    char connect;
+    int cid, i;
 
     client_t *c = cln;
     cid = c->cid;
@@ -153,8 +182,9 @@ void *client_thread(void *cln)
     }
 
     /* Log info */
-    printf("[%s] Accepted request from IP %s port %d as client %d {%d}\n", timestamp(st.tmr_buf),
-            inet_ntoa(c->caddr.sin_addr), c->caddr.sin_port, cid, (int)pthread_self());
+    printf("[%s] Accepted request from IP %s port %d as client %d {%d}\n",
+            timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
+            c->caddr.sin_port, cid, (int)pthread_self());
     st.exit = 0;
     connect = 1;
 
@@ -164,27 +194,10 @@ void *client_thread(void *cln)
     */
      while(connect && !st.exit) {
         /* listen for client commands */
-        i = 0;
-        j = 0;
-        cb = ' ';
-        memset(cmd_buf, '\0', COMMAND_MAX_LEN);
-
-        while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
-            j = read(c->cfd, &cb, 1);
-            if(j == 0 || (ends_cmd(cb) < 0)) {
-                connect = 0;
-                break;
-            }
-            cmd_buf[i] = cb;
-            if(st.verbose) {
-                printf("[%d] %c=%d\n", cid, cmd_buf[i], cmd_buf[i]);
-            }
-            i += j;
-        }
-        cmd_buf[i] = '\0';
+        i = read_command(cmd_buf, COMMAND_MAX_LEN, c->cfd, &connect);
         /* parse command */
         switch(cmd_buf[MPLAYER_CMD_MODE]) {
-            case 'e':
+            case MPLAYER_MODE_EXIT:
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     connect = 0;
@@ -198,7 +211,7 @@ void *client_thread(void *cln)
                 break;
 
             default:
-                if(j && st.verbose) {
+                if(st.verbose) {
                     printf("[%s] Client %d {%d}: invalid command\n",
                         timestamp(st.tmr_buf), cid, (int)pthread_self());
                 }
