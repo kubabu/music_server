@@ -31,9 +31,6 @@ int client_close(int cid)
 {
     client_t *c = clbuf[cid];
 
-    if(st.exit) {
-        shutdown(st.sfd, SHUT_RDWR);
-    }
     if(c != NULL) {
         char end = EOF;
         printf("[%s] Client %d {%d} disconnecting \n", timestamp(st.tmr_buf),
@@ -42,6 +39,9 @@ int client_close(int cid)
         close(c->cfd);
         clbuf[c->cid] = NULL;
         free(c);
+    }
+    if(st.exit) {
+        shutdown(st.sfd, SHUT_RDWR);
     }
 
     return 0;
@@ -186,8 +186,6 @@ void *client_thread(void *cln)
                     st.exit = 1;
                     printf("[%s] Client %d {%d} ordered server shutdown\n",
                         timestamp(st.tmr_buf), cid, (int)pthread_self());
-
-                    ct_close(cid);
                 }
 
             default:
