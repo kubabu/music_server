@@ -30,6 +30,9 @@ int client_close(int cid)
 {
     client_t *c = clbuf[cid];
 
+    if(st.exit) {
+        shutdown(st.sfd, SHUT_RDWR);
+    }
     if(c != NULL) {
         printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
            c->cid, (int)pthread_self());
@@ -43,9 +46,6 @@ int client_close(int cid)
 
 void ct_close(int cid)
 {
-    if(st.exit) {
-        shutdown(st.sfd, SHUT_RDWR);
-    }
     client_close(cid);
     pthread_exit(NULL);
 }
@@ -77,7 +77,7 @@ void s_safe_exit(int sig)
             } else {
                 /* pthread_join(clbuf[i]->tid, NULL); */
                 pthread_cancel(clbuf[i]->tid);
-                ct_close(i);
+                client_close(i);
             }
         }
     }
@@ -169,6 +169,9 @@ void *client_thread(void *cln)
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     connect = 0;
                     st.exit = 1;
+                    printf("[%s] Client %d {%d} ordered server shutdown\n",
+                        timestamp(st.tmr_buf), cid, (int)pthread_self());
+
                     ct_close(cid);
                 }
 
