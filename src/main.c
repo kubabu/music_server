@@ -62,7 +62,7 @@ void ct_close(int cid)
         }
     }
     client_close(cid);
-    pthread_exit(NULL);
+/*/    pthread_exit(NULL); */
 }
 
 
@@ -86,17 +86,16 @@ void s_safe_exit(int sig)
     }
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
+        char end = EOF;
+        client_t *client = clbuf[i];
         if(clbuf[i] != NULL) {
-            if(clbuf[i]->tid == pthread_self()) {
-                me = i;
-            } else {
+            write(client->cfd, &end, 1);
 #ifdef DETACHED
-                pthread_cancel(clbuf[i]->tid);
+            pthread_cancel(clbuf[i]->tid);
 #else
-                pthread_join(clbuf[i]->tid, NULL);
+            pthread_join(clbuf[i]->tid, NULL);
 #endif
-                client_close(i);
-            }
+            client_close(i);
         }
     }
 
@@ -159,7 +158,7 @@ void *client_thread(void *cln)
     st.exit = 0;
     connect = 1;
 
-    write(c->cfd, "Client accepted", 17);
+    write(c->cfd, "Client accepted", 16);
     /*
     send JSON with mp3 root
     */
@@ -177,7 +176,9 @@ void *client_thread(void *cln)
                 break;
             }
             cmd_buf[i] = cb;
-            printf("[%d] %c=%d\n", 0, cmd_buf[i], cmd_buf[i]);
+            if(st.verbose) {
+                printf("[%d] %c=%d\n", cid, cmd_buf[i], cmd_buf[i]);
+            }
             i += j;
         }
         cmd_buf[i] = '\0';
@@ -191,18 +192,23 @@ void *client_thread(void *cln)
                     printf("[%s] Client %d {%d} ordered server shutdown\n",
                         timestamp(st.tmr_buf), cid, (int)pthread_self());
                 }
+                break;
+            case '\0':
+                write(c->cfd, "\0", 1);  /* pingback */
+                break;
 
             default:
                 if(j && st.verbose) {
                     printf("[%s] Client %d {%d}: invalid command\n",
                         timestamp(st.tmr_buf), cid, (int)pthread_self());
                 }
+                break;
         }
     }
 
     ct_close(cid);
 
-     return 0;
+    return 0;
 }
 
 int getffi(status_t s, client_t **cbuf) {

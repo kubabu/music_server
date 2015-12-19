@@ -38,6 +38,7 @@ void *rdthread(void *buf)
             if(read_on) {
                 printf("\nGot EOF from server\n");
             }
+          /*  write(conn_fd, &c, 1); */
             read_on = 0;
             break;
         }
