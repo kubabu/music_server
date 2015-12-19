@@ -183,24 +183,46 @@ void *client_thread(void *cln)
         }
         cmd_buf[i] = '\0';
         /* parse command */
-        switch(cmd_buf[MPLAYER_CMD_MODE]) {
-            case 'e':
+
+        if(st.verbose && i) {
+            printf("[%s] Client %d ", timestamp(st.tmr_buf), cid);
+        }
+        switch(cmd_buf[0]) {
+            case MPLAYER_MODE_EXIT:
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     connect = 0;
                     st.exit = 1;
-                    printf("[%s] Client %d {%d} ordered server shutdown\n",
-                        timestamp(st.tmr_buf), cid, (int)pthread_self());
+                    printf("ordered server shutdown\n");
                 }
                 break;
             case '\0':
                 write(c->cfd, "\0", 1);  /* pingback */
                 break;
+            case MPLAYER_PLAY_LOCAL:
+                if(st.verbose) {
+                    printf("play %d\n", cmd_buf[1]);
+                }
+                break;
+            case MPLAYER_SET_PAUSE:
+                if(st.verbose) {
+                    printf("pause\n");
+                }
+                break;
+            case MPLAYER_SET_STOP:
+                if(st.verbose) {
+                    printf("stop\n");
+                }
+                break;
+            case MPLAYER_SET_VOL_UP:
+                if(st.verbose) {
+                    printf("vol up\n");
+                }
+                break;
 
             default:
-                if(j && st.verbose) {
-                    printf("[%s] Client %d {%d}: invalid command\n",
-                        timestamp(st.tmr_buf), cid, (int)pthread_self());
+                if(st.verbose) {
+                    printf("Unsupported or invalid command\n");
                 }
                 break;
         }

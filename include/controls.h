@@ -3,6 +3,7 @@
 #define MPLAYER_COMMAND  1
 
 #define MPLAYER_MODE_SET 's'
+#define MPLAYER_MODE_EXIT 'e'
 #define MPLAYER_MODE_LIST 'l'
 #define MPLAYER_MODE_PLAY 'p'
 
