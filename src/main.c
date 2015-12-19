@@ -22,7 +22,6 @@
 
 status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
-pthread_t main_th;
 pthread_mutex_t mx;
 
 
@@ -37,7 +36,7 @@ int client_close(int cid)
     }
     if(c != NULL) {
         char end = EOF;
-        printf("[%s] Client %d {%d} disconnectng \n", timestamp(st.tmr_buf),
+        printf("[%s] Client %d {%d} disconnecting \n", timestamp(st.tmr_buf),
            c->cid, (int)pthread_self());
         write(c->cfd, &end, 1);
         close(c->cfd);
@@ -102,7 +101,7 @@ void s_safe_exit(int sig)
     }
     close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
-    if(pthread_self() != main_th) {
+    if(pthread_self() != st.mid) {
         puts("Exit called form client thread");
 /*/        pthread_exit(NULL); */
     }
@@ -226,7 +225,7 @@ int getffi(status_t s, client_t **cbuf) {
 
 int main(int argc, char *argv[])
 {
-    int ffi, sfd_on;
+    int ffi, sfd_on, thr_create_err;
     socklen_t l;
     pthread_t *ptid;
     struct sockaddr_in myaddr;
@@ -237,7 +236,6 @@ int main(int argc, char *argv[])
     signal(SIGINT, &s_safe_exit);
 
     pthread_mutex_init(&mx, NULL);
-    main_th = pthread_self();
 
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
@@ -296,7 +294,12 @@ int main(int argc, char *argv[])
             /* safely create thread to serve client */
             pthread_mutex_lock(&mx);
             clbuf[ffi] = st.last_client;
-            pthread_create(ptid, NULL, client_thread, st.last_client);
+            thr_create_err = pthread_create(ptid, NULL, client_thread,
+                                            st.last_client);
+            if(thr_create_err) {
+                 perror("Can't create thread");
+                 s_safe_exit(0);
+            }
 #ifdef DETACHED
             pthread_detach(*ptid);
 #endif

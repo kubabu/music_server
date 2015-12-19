@@ -35,8 +35,10 @@ void *rdthread(void *buf)
     while(read_on) {
         read(conn_fd, &c, 1);
         if(c == EOF) {
+            if(read_on) {
+                printf("\nGot EOF from server\n");
+            }
             read_on = 0;
-            printf("Got EOF from server");
             break;
         }
         printf("GOT{%c} [%d]\n", c, c);
@@ -49,7 +51,7 @@ void *rdthread(void *buf)
     if(rdbuf != buf) {
         free(buf);
     }
-    safe_exit(0);
+/*    safe_exit(0); */
     return 0;
 }
 
@@ -64,7 +66,6 @@ void conn_close(int conn_fd)
 void safe_exit(int sig)
 {
     read_on = 0;
-    shutdown(conn_fd, SHUT_RDWR);
     conn_close(conn_fd);
     if(sig) {
         printf("\rGot SIG%d, closing test client...\n", sig);
@@ -73,11 +74,8 @@ void safe_exit(int sig)
     }
     if(pthread_self() == main_th) {
         pthread_join(rd_th, NULL);
-    } else {
-       /* pthread_exit(NULL); */
-        puts("exit from rdthread");
     }
-     exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char *argv[])
@@ -151,7 +149,9 @@ int main(int argc, char *argv[])
                 exit(EXIT_SUCCESS);
             }
             read(STDIN_FILENO, cmd_buf, 1);
-            write(fd, cmd_buf, 1);
+            if(read_on) {
+                write(fd, cmd_buf, 1);
+            }
             timeout_update(&tmr);
 /*            n = 0;
             memset(cmd_buf, '\0', COMMAND_MAX_LEN);
