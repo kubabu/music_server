@@ -42,7 +42,8 @@ void *rdthread(void *buf)
             read_on = 0;
             break;
         }
-        printf("GOT{%c} [%d]\n", c, c);
+        printf("[%c] ", c);
+        /* printf("GOT{%c} [%d]\n", c, c); */
         io_buf_write(rdbuf, c);
         while(rdbuf->st == BUFFER_FULL && read_on) {
             sleep(1);
@@ -137,21 +138,34 @@ int main(int argc, char *argv[])
             write(STDOUT_FILENO, argv[m], strlen(argv[m]));
         }
     } else {
-        printf("<REPL mode>\n");
+        read(fd, cmd_buf, 16);
+        printf("%s\n<REPL mode>\n", cmd_buf);
         timeout_update(&tmr);
 
         pthread_create(&rd_th, NULL, rdthread, &sockrd);
 
         while(!timeout(&tmr, CLIENT_CMD_TIMEOUT_SEC) && read_on) {
+            int i = 0;
+            memset(cmd_buf, '\0', COMMAND_MAX_LEN);
             m = sizeof(n);
             con = getsockopt(fd, SOL_SOCKET, SO_ERROR, &n, &m);
             if(con) {
                 perror("Connection possibly lost");
                 exit(EXIT_SUCCESS);
             }
-            read(STDIN_FILENO, cmd_buf, 1);
+            while(i < COMMAND_MAX_LEN - 1) {
+                read(STDIN_FILENO, cmd_buf + i, 1);
+                if(ends_cmd(cmd_buf[i])) {
+                    if(cmd_buf[i] == '\n') {
+                        cmd_buf[i] = '\0';
+                    }
+                    break;
+                }
+                i++;
+            }
+
             if(read_on) {
-                write(fd, cmd_buf, 1);
+                write(fd, cmd_buf, strlen(cmd_buf) + 1);
             }
             timeout_update(&tmr);
 /*            n = 0;

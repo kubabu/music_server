@@ -108,6 +108,7 @@ int play_locally(char *path)
         printf("[%s] Now playing: %s\n", timestamp(stamp), path);
         play_local(path);
     } else {
+        printf("%s: file not found\n", path);
         /* file doesn't exist, something went wrong */
         return -1;
     }

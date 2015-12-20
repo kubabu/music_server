@@ -62,6 +62,7 @@ io_buf_status io_buf_read(io_buffer_t *buf, char *c);
 
 io_buf_status io_buf_peek(io_buffer_t *buf, char *c);
 
+char ends_cmd(char c);
 
 /* low resolution [1 s] timeout detection */
 char timeout(time_t *t, int lim);

@@ -61,6 +61,20 @@ io_buf_status io_buf_peek(io_buffer_t *buf, char *c)
     return BUFFER_OK;
 }
 
+char ends_cmd(char c) {
+    switch(c) {
+        case '%':
+        case EOF:
+            return -1;
+        case '\0':
+        case '\r':
+        case '\n':
+            return 1;
+    }
+    return 0;
+}
+
+
 
 /* low resolution timeout counter */
 char timeout(time_t *t, int lim)

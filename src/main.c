@@ -112,20 +112,6 @@ void s_safe_exit(int sig)
     exit(EXIT_SUCCESS);
 }
 
-char ends_cmd(char c) {
-    switch(c) {
-        case '%':
-        case EOF:
-            return -1;
-        case '\0':
-        case '\r':
-        case '\n':
-            return 1;
-    }
-    return 0;
-}
-
-
 int read_command(char *buf, int buflen, int sock_fd, char *con_on)
 {
     char cb;
@@ -239,6 +225,7 @@ void *client_thread(void *cln)
                 if(st.verbose) {
                     printf("play %s\n", cmd_buf + 1);
                 }
+                play_locally(cmd_buf + 1);
                 break;
             case MPLAYER_SET_PAUSE:
                 if(st.verbose) {
