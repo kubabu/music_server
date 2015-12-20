@@ -84,4 +84,6 @@ int getcid(client_t **buf, int max);
 
 int printcl(client_t *cl, int i);
 
+void thread_sig_capture(int sig);
+
 #endif

@@ -181,3 +181,9 @@ int printcl(client_t *cl, int i)
     return cl->cid;
 }
 
+void thread_sig_capture(int sig) {
+    printf("\rThread intercepted signal %d\n", sig);
+    st.exit = 1;
+    shutdown(st.sfd, SHUT_RDWR);
+}
+

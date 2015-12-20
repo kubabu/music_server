@@ -25,7 +25,7 @@
 extern status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
 pthread_mutex_t mx;
-
+char *slave_cmd_buf;
 
 void *client_thread(void *arg);
 
@@ -76,14 +76,17 @@ void s_safe_exit(int sig)
     if(re) {
         return;
     }
-    close_mp3();
+    memcpy(slave_cmd_buf, "exit", 5);
+    printf("MPLAYER cmd buf: [%s]\n ", mplayer_cmdbuf);
+    pthread_join(mplayer_tid, NULL);
+
     re = 1;
     me = -1;
     timestamp(st.tmr_buf);
     if(sig) {
         printf("\r[%s] Got signal %d\n", st.tmr_buf, sig);
     } else {
-        printf("\r[%s] Client ordered server shutdown\n", st.tmr_buf);
+        printf("\r[%s] ordered server shutdown\n", st.tmr_buf);
     }
     shutdown(st.sfd, SHUT_RDWR);
     for(i = 0; i < MAX_CLIENT_COUNT; ++i){
@@ -225,7 +228,7 @@ void *client_thread(void *cln)
                 if(st.verbose) {
                     printf("play %s\n", cmd_buf + 1);
                 }
-                play_locally(cmd_buf + 1);
+                /* play_locally(cmd_buf + 1); */
                 break;
             case MPLAYER_SET_PAUSE:
                 if(st.verbose) {
@@ -289,7 +292,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, &s_safe_exit);
 
     pthread_mutex_init(&mx, NULL);
-
+    slave_cmd_buf = mplayer_cmdbuf;
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
         st.port = atoi(argv[1]);
@@ -325,6 +328,7 @@ int main(int argc, char *argv[])
     st.verbose = 1;
     l = sizeof(st.last_client->caddr);
 
+    pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
     /* main loop */
     while(!st.exit) {
         ffi = getffi(st, clbuf);
@@ -360,7 +364,7 @@ int main(int argc, char *argv[])
         }
         st.last_client = NULL;
     }
-    s_safe_exit(0);
+    s_safe_exit(-1);
 
     return 0;
 }

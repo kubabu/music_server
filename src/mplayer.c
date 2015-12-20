@@ -29,18 +29,34 @@ static char play;
 static off_t pos;
 char stamp[TIME_BUFLEN];
 mpg123_handle *mh;
-pthread_mutex_t mpx;
 
 char *music_root = MUSIC_ROOT;
+
+
+void *mplayer_thread(void *arg)
+{
+    char *cmd_buf = (char *)arg;
+
+    signal(SIGQUIT, &thread_sig_capture);
+    signal(SIGINT, &thread_sig_capture);
+
+    pthread_mutex_init(&mplayer_mutex, NULL);
+    while((memcmp(cmd_buf, "exit", 4) != 0  && !st.exit)) {
+    /*  */
+        sleep(1);
+    }
+    puts("Mplayer thread leaving now...");
+    return NULL;
+}
 
 int init_mp3(void)
 {
     static int i = 0;
 
     if(!initd) {
-        pthread_mutex_init(&mpx, NULL);
-/*      ao_initialize();
-        i = ao_default_driver_id(); */
+        pthread_mutex_init(&mplayer_mutex, NULL);
+        ao_initialize();
+        i = ao_default_driver_id();
         mpg123_init();
     }
     initd = 1;
@@ -52,7 +68,7 @@ int init_mp3(void)
 
 int close_mp3(void)
 {
-    pthread_mutex_lock(&mpx);
+    pthread_mutex_lock(&mplayer_mutex);
     pos = 0;
     play = 0;
     if(mh != NULL) {
@@ -63,7 +79,7 @@ int close_mp3(void)
 
     mpg123_exit();
     ao_shutdown();
-/*    pthread_mutex_unlock(&mpx); */
+/*    pthread_mutex_unlock(&mplayer_mutex); */
 
     return 0;
 }
@@ -97,15 +113,15 @@ int play_local(char *path)
     format.channels = channels;
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
-/*    dev = ao_open_live(driver, &format, NULL); */
+    dev = ao_open_live(driver, &format, NULL);
 
     while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK && play) {
-/*      ao_play(dev, (char*)buffer, done); */
+      ao_play(dev, (char*)buffer, done);
     }
     free(buffer);
-/*  ao_close(dev); */
+    ao_close(dev);
     mpg123_exit();
-/*    ao_shutdown(); */
+    ao_shutdown();
 
     return err;
 }
