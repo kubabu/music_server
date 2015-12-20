@@ -22,7 +22,7 @@
 #define DETACHED
 
 
-status_t st;
+extern status_t st;
 client_t *clbuf[MAX_CLIENT_COUNT];
 pthread_mutex_t mx;
 

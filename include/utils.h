@@ -29,7 +29,6 @@ typedef struct client_t {
 /* Global structure with configuration */
 typedef struct status_t {
     int from_music_player[2];
-    char *l_s_root;
 
     char verbose;
     char dos;
@@ -42,6 +41,8 @@ typedef struct status_t {
     client_t *last_client;
     pthread_t mid;
 } status_t;
+
+status_t st;
 
 /* Circular buffer */
 typedef enum io_buf_status {BUFFER_OK, BUFFER_EMPTY, BUFFER_FULL} io_buf_status;

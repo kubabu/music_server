@@ -1,5 +1,6 @@
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include  "ao/ao.h"
@@ -27,7 +28,7 @@ static char play;
 static off_t pos;
 char stamp[TIME_BUFLEN];
 
-
+char *music_root = MUSIC_ROOT;
 
 int init_mp3(void)
 {
@@ -94,9 +95,9 @@ int play_local(char *path)
     ao_close(dev);
     mpg123_close(mh);
     mpg123_delete(mh);
-/*
+
     mpg123_exit();
-    ao_shutdown(); */
+    ao_shutdown();
 
     return err;
 }
@@ -104,9 +105,14 @@ int play_local(char *path)
 
 int play_locally(char *path)
 {
-    if (access(path, F_OK) != -1) {
-        printf("[%s] Now playing: %s\n", timestamp(stamp), path);
-        play_local(path);
+    char fullpath[COMMAND_MAX_LEN] = {'\0'};
+
+    memcpy(fullpath, music_root, strlen(music_root));
+    memcpy(fullpath + strlen(MUSIC_ROOT), path, strlen(path));
+
+    if (access(fullpath, F_OK) != -1) {
+        printf("[%s] Now playing: %s\n", timestamp(stamp), fullpath);
+        play_local(fullpath);
     } else {
         printf("%s: file not found\n", path);
         /* file doesn't exist, something went wrong */
