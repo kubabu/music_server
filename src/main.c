@@ -194,26 +194,71 @@ void *client_thread(void *cln)
     */
      while(connect && !st.exit) {
         /* listen for client commands */
+        char cb;
+        int i, j;
+
+        i = 0;
+        j = 0;
+        cb = ' ';
+        memset(cmd_buf, '\0', COMMAND_MAX_LEN);
+
+        while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
+            j = read(c->cfd, &cb, 1);
+            if(j == 0 || (ends_cmd(cb) < 0)) {
+                connect = 0;
+                break;
+            }
+            cmd_buf[i] = cb;
+            if(st.verbose) {
+                printf("[] %c=%d\n", cb, cb);
+            }
+            i += j;
+        }
+        cmd_buf[i] = '\0';
+
+        /*
         i = read_command(cmd_buf, COMMAND_MAX_LEN, c->cfd, &connect);
-        /* parse command */
-        switch(cmd_buf[MPLAYER_CMD_MODE]) {
+         parse command */
+
+        if(st.verbose && i) {
+            printf("[%s] Client %d ", timestamp(st.tmr_buf), cid);
+        }
+        switch(cmd_buf[0]) {
             case MPLAYER_MODE_EXIT:
                 if(memcmp(cmd_buf, "exit", 4) == 0) {
                     /* write(c->cfd, "SERVER EXIT\n", 13); */
                     connect = 0;
                     st.exit = 1;
-                    printf("[%s] Client %d {%d} ordered server shutdown\n",
-                        timestamp(st.tmr_buf), cid, (int)pthread_self());
+                    printf("ordered server shutdown\n");
                 }
                 break;
             case '\0':
                 write(c->cfd, "\0", 1);  /* pingback */
                 break;
+            case MPLAYER_PLAY_LOCAL:
+                if(st.verbose) {
+                    printf("play %s\n", cmd_buf + 1);
+                }
+                break;
+            case MPLAYER_SET_PAUSE:
+                if(st.verbose) {
+                    printf("pause\n");
+                }
+                break;
+            case MPLAYER_SET_STOP:
+                if(st.verbose) {
+                    printf("stop\n");
+                }
+                break;
+            case MPLAYER_SET_VOL_UP:
+                if(st.verbose) {
+                    printf("vol up\n");
+                }
+                break;
 
             default:
                 if(st.verbose) {
-                    printf("[%s] Client %d {%d}: invalid command\n",
-                        timestamp(st.tmr_buf), cid, (int)pthread_self());
+                    printf("Unsupported or invalid command\n");
                 }
                 break;
         }
