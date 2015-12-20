@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,16 +28,19 @@ static char initd;
 static char play;
 static off_t pos;
 char stamp[TIME_BUFLEN];
+mpg123_handle *mh;
+pthread_mutex_t mpx;
 
 char *music_root = MUSIC_ROOT;
 
 int init_mp3(void)
 {
-    static int i;
+    static int i = 0;
 
     if(!initd) {
-        ao_initialize();
-        i = ao_default_driver_id();
+        pthread_mutex_init(&mpx, NULL);
+/*      ao_initialize();
+        i = ao_default_driver_id(); */
         mpg123_init();
     }
     initd = 1;
@@ -48,10 +52,18 @@ int init_mp3(void)
 
 int close_mp3(void)
 {
+    pthread_mutex_lock(&mpx);
     pos = 0;
     play = 0;
+    if(mh != NULL) {
+        mpg123_close(mh);
+        mpg123_delete(mh);
+        mh = NULL;
+    }
+
     mpg123_exit();
     ao_shutdown();
+/*    pthread_mutex_unlock(&mpx); */
 
     return 0;
 }
@@ -61,11 +73,10 @@ int close_mp3(void)
  */
 int play_local(char *path)
 {
+    int driver;
     ao_device *dev;
     ao_sample_format format;
-    mpg123_handle *mh;
     unsigned char *buffer;
-    int driver;
     int err;
     int channels, encoding;
     long rate;
@@ -86,18 +97,15 @@ int play_local(char *path)
     format.channels = channels;
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
-    dev = ao_open_live(driver, &format, NULL);
+/*    dev = ao_open_live(driver, &format, NULL); */
 
     while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK && play) {
-        ao_play(dev, (char*)buffer, done);
+/*      ao_play(dev, (char*)buffer, done); */
     }
     free(buffer);
-    ao_close(dev);
-    mpg123_close(mh);
-    mpg123_delete(mh);
-
+/*  ao_close(dev); */
     mpg123_exit();
-    ao_shutdown();
+/*    ao_shutdown(); */
 
     return err;
 }

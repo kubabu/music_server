@@ -76,6 +76,7 @@ void s_safe_exit(int sig)
     if(re) {
         return;
     }
+    close_mp3();
     re = 1;
     me = -1;
     timestamp(st.tmr_buf);
@@ -102,7 +103,6 @@ void s_safe_exit(int sig)
     if(st.last_client != NULL || me != -1) {
         free(st.last_client);
     }
-    close_mp3();
     printf("\r[%s] Closing now \n", timestamp(st.tmr_buf));
     if(pthread_self() != st.mid) {
         puts("Exit called form client thread");
