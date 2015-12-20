@@ -43,7 +43,7 @@ void *mplayer_thread(void *arg)
     pthread_mutex_init(&mplayer_mutex, NULL);
     while((memcmp(cmd_buf, "exit", 4) != 0  && !st.exit)) {
     /*  */
-        sleep(1);
+        usleep(100);
     }
     puts("Mplayer thread leaving now...");
     return NULL;
