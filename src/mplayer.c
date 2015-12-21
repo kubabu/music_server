@@ -21,12 +21,18 @@
 #define COMMAND         "-C"
 
 
-#define BITS            8
-
+#define BITS                8
+#define MP_COMMAND_MAX_LEN  512
 
 static char initd;
 static char play;
 static off_t pos;
+
+pthread_t mplayer_tid;
+pthread_mutex_t mplayer_buf_mutex;
+
+char mplayer_cmdbuf[MP_COMMAND_MAX_LEN];
+
 char stamp[TIME_BUFLEN];
 mpg123_handle *mh;
 
@@ -36,11 +42,16 @@ char *music_root = MUSIC_ROOT;
 void *mplayer_thread(void *arg)
 {
     char *cmd_buf = (char *)arg;
+    static char mp_thr_on = 0;
+    if(mp_thr_on++) {
+        puts("There should be only one mplayer thread");
+        return NULL; /* there can be only one */
+    }
 
     signal(SIGQUIT, &thread_sig_capture);
     signal(SIGINT, &thread_sig_capture);
 
-    pthread_mutex_init(&mplayer_mutex, NULL);
+    /* parse commands and execute them */
     while((memcmp(cmd_buf, "exit", 4) != 0  && !st.exit)) {
         /*  */
         usleep(100);
@@ -49,12 +60,37 @@ void *mplayer_thread(void *arg)
     return NULL;
 }
 
+void mplayer_init(void)
+{
+    pthread_mutex_init(&mplayer_buf_mutex, NULL);
+    pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
+}
+
+void mplayer_end(void)
+{
+    /* */
+    memcpy(mplayer_cmdbuf, "exit", 5);
+
+    pthread_join(mplayer_tid, NULL);
+
+}
+
+void mplayer_send_command(char *c, size_t n)
+{
+    /* */
+    int count;
+    count = n > MP_COMMAND_MAX_LEN ? MP_COMMAND_MAX_LEN : n;
+    pthread_mutex_lock(&mplayer_buf_mutex);
+    memcpy(mplayer_cmdbuf, c, count);
+    pthread_mutex_unlock(&mplayer_buf_mutex);
+}
+
 int init_mp3(void)
 {
     static int i = 0;
 
     if(!initd) {
-        pthread_mutex_init(&mplayer_mutex, NULL);
+        pthread_mutex_init(&mplayer_buf_mutex, NULL);
         ao_initialize();
         i = ao_default_driver_id();
         mpg123_init();
@@ -68,7 +104,7 @@ int init_mp3(void)
 
 int close_mp3(void)
 {
-    pthread_mutex_lock(&mplayer_mutex);
+/*    pthread_mutex_lock(&mplayer_buf_mutex); */
     pos = 0;
     play = 0;
     if(mh != NULL) {

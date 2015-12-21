@@ -76,9 +76,7 @@ void s_safe_exit(int sig)
     if(re) {
         return;
     }
-    memcpy(slave_cmd_buf, "exit", 5);
-    printf("MPLAYER cmd buf: [%s]\n ", mplayer_cmdbuf);
-    pthread_join(mplayer_tid, NULL);
+    mplayer_end();
 
     re = 1;
     me = -1;
@@ -293,7 +291,7 @@ int main(int argc, char *argv[])
     signal(SIGINT, &s_safe_exit);
 
     pthread_mutex_init(&mx, NULL);
-    slave_cmd_buf = mplayer_cmdbuf;
+
     st.port = SERV_DEF_PORT;
     if(argc > 1) {
         st.port = atoi(argv[1]);
@@ -324,8 +322,8 @@ int main(int argc, char *argv[])
     st.verbose = 1;
     /* display info on startup */
     if(st.verbose) {
-        printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n", 
-                (argv[0] + 2), get_ip(st.ip_buffer), st.port, 
+        printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n",
+                (argv[0] + 2), get_ip(st.ip_buffer), st.port,
                 timestamp(st.tmr_buf), getpid(), sizeof(client_t)
         );
     }
@@ -334,7 +332,7 @@ int main(int argc, char *argv[])
     listen(st.sfd, 5);
 
     /* launch music player thread */
-    pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
+    mplayer_init();
 
     /* main loop */
     while(!st.exit) {
@@ -364,6 +362,7 @@ int main(int argc, char *argv[])
                                             st.last_client);
             if(thr_create_err) {
                  perror("Can't create thread");
+                 pthread_mutex_unlock(&mx);
                  s_safe_exit(0);
             }
 #ifdef DETACHED

@@ -1,13 +1,8 @@
 #include  "utils.h"
 #include  "utils.h"
 
-pthread_t mplayer_tid;
-pthread_mutex_t mplayer_mutex;
+void mplayer_init(void);
 
-char mplayer_cmdbuf[COMMAND_MAX_LEN];
+void mplayer_end(void);
 
-void *mplayer_thread(void *arg);
-
-int close_mp3(void);
-
-
+void mplayer_send_command(char *c, size_t n);
