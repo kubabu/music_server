@@ -62,7 +62,7 @@ void ct_close(int cid)
         }
     }
     client_close(cid);
-/*/    pthread_exit(NULL); */
+    pthread_exit(NULL);
 }
 
 
@@ -259,6 +259,7 @@ void *client_thread(void *cln)
     return 0;
 }
 
+/* get free index on client table or claim DOS */
 int getffi(status_t s, client_t **cbuf) {
     int n = getcid(cbuf, MAX_CLIENT_COUNT);
 
@@ -319,18 +320,25 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    listen(st.sfd, 5);
 
-    /* display info on startup */
-    printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n", (argv[0] + 2),
-           get_ip(st.ip_buffer), st.port, timestamp(st.tmr_buf), getpid(), sizeof(client_t)
-    );
     st.verbose = 1;
+    /* display info on startup */
+    if(st.verbose) {
+        printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n", 
+                (argv[0] + 2), get_ip(st.ip_buffer), st.port, 
+                timestamp(st.tmr_buf), getpid(), sizeof(client_t)
+        );
+    }
     l = sizeof(st.last_client->caddr);
 
+    listen(st.sfd, 5);
+
+    /* launch music player thread */
     pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
+
     /* main loop */
     while(!st.exit) {
+        /* get place for client on client table */
         ffi = getffi(st, clbuf);
         st.last_client = malloc(sizeof(client_t));
         if(st.last_client == NULL){
@@ -341,6 +349,7 @@ int main(int argc, char *argv[])
         ptid = &st.last_client->tid;
         client_addr = (struct sockaddr*)&st.last_client->caddr;
 
+        /* listen on socket to accept client */
         if((st.last_client->cfd = accept(st.sfd, client_addr, &l)) < 0) {
             if(!st.exit) {
                 perror("Problem with accepting client");
