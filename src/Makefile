@@ -65,6 +65,6 @@ VALGRIND_FLAGS = --leak-check=full --track-origins=yes --show-leak-kinds=all
 test_server_with_valgrind: clean_build
 	valgrind $(VALGRIND_FLAGS) $(BINDIR)/server
 
-test_run_client: client
+test_client_run: client
 	valgrind $(BINDIR)/client localhost 1234
 

@@ -38,14 +38,55 @@ mpg123_handle *mh;
 
 char *music_root = MUSIC_ROOT;
 
+void mplayer_parse_cmd(void)
+{
+    pthread_mutex_lock(&mplayer_buf_mutex);
+        switch(mplayer_cmdbuf[0]) {
+            case '\0':
+                if(!play){
+                    usleep(100);
+                }
+/*                write(c->cfd, "\0", 1);  / * pingback */
+                break;
+            case MPLAYER_PLAY_LOCAL:
+                if(st.verbose) {
+                    printf("play %s\n", mplayer_cmdbuf + 1);
+                }
+                /* play_locally(cmd_buf + 1); */
+                break;
+            case MPLAYER_SET_PAUSE:
+                if(st.verbose) {
+                    printf("pause\n");
+                }
+                break;
+            case MPLAYER_SET_STOP:
+                if(st.verbose) {
+                    printf("stop\n");
+                }
+                break;
+            case MPLAYER_SET_VOL_UP:
+                if(st.verbose) {
+                    printf("vol up\n");
+                }
+                break;
+
+            default:
+                if(st.verbose) {
+                    printf("Unsupported or invalid command\n");
+                }
+                break;
+        }
+        memset(mplayer_cmdbuf, '\0', MP_COMMAND_MAX_LEN);
+    pthread_mutex_unlock(&mplayer_buf_mutex);
+}
 
 void *mplayer_thread(void *arg)
 {
+    /* launch new thread with music player */
     char *cmd_buf = (char *)arg;
     static char mp_thr_on = 0;
     if(mp_thr_on++) {
-        puts("There should be only one mplayer thread");
-        return NULL; /* there can be only one */
+        pthread_exit(NULL); /* there can be only one */
     }
 
     signal(SIGQUIT, &thread_sig_capture);
@@ -53,16 +94,20 @@ void *mplayer_thread(void *arg)
 
     /* parse commands and execute them */
     while((memcmp(cmd_buf, "exit", 4) != 0  && !st.exit)) {
-        /*  */
-        usleep(100);
+        /* usleep(100); */
+        mplayer_parse_cmd();
     }
-    puts("Mplayer thread leaving now...");
     return NULL;
 }
 
 void mplayer_init(void)
 {
+    static char initd;
+    if(initd++) {
+        return; /* Already initiated */
+    }
     pthread_mutex_init(&mplayer_buf_mutex, NULL);
+    play = 0;
     pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
 }
 
@@ -75,7 +120,7 @@ void mplayer_end(void)
 
 }
 
-void mplayer_send_command(char *c, size_t n)
+void mplayer_load_command(char *c, size_t n)
 {
     /* */
     int count;

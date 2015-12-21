@@ -42,8 +42,8 @@ void *rdthread(void *buf)
             read_on = 0;
             break;
         }
-        printf("[%c] ", c);
-        /* printf("GOT{%c} [%d]\n", c, c); */
+        printf("%c", c);
+
         io_buf_write(rdbuf, c);
         while(rdbuf->st == BUFFER_FULL && read_on) {
             sleep(1);

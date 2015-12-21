@@ -208,48 +208,18 @@ void *client_thread(void *cln)
          parse command */
 
         if(st.verbose && i) {
-            printf("[%s] Client %d ", timestamp(st.tmr_buf), cid);
+            printf("[%s] Client %d: ", timestamp(st.tmr_buf), cid);
         }
-        switch(cmd_buf[0]) {
-            case MPLAYER_MODE_EXIT:
-                if(memcmp(cmd_buf, "exit", 4) == 0) {
-                    /* write(c->cfd, "SERVER EXIT\n", 13); */
-                    connect = 0;
-                    st.exit = 1;
-                    printf("ordered server shutdown\n");
-                }
-                break;
-            case '\0':
-                write(c->cfd, "\0", 1);  /* pingback */
-                break;
-            case MPLAYER_PLAY_LOCAL:
-                if(st.verbose) {
-                    printf("play %s\n", cmd_buf + 1);
-                }
-                /* play_locally(cmd_buf + 1); */
-                break;
-            case MPLAYER_SET_PAUSE:
-                if(st.verbose) {
-                    printf("pause\n");
-                }
-                break;
-            case MPLAYER_SET_STOP:
-                if(st.verbose) {
-                    printf("stop\n");
-                }
-                break;
-            case MPLAYER_SET_VOL_UP:
-                if(st.verbose) {
-                    printf("vol up\n");
-                }
-                break;
-
-            default:
-                if(st.verbose) {
-                    printf("Unsupported or invalid command\n");
-                }
-                break;
+#ifdef DEBUG
+        /* check if client didn't ordered server shutdown */
+        if(memcmp(cmd_buf, "exit", 4) == 0) {
+        write(c->cfd, "SERVER EXIT\n", 13);
+            st.exit = 1;
+            printf("ordered server shutdown\n");
         }
+#endif
+        /* send commands to client */
+        mplayer_load_command(cmd_buf, COMMAND_MAX_LEN);
     }
 
     ct_close(cid);
@@ -257,7 +227,7 @@ void *client_thread(void *cln)
     return 0;
 }
 
-/* get free index on client table or claim DOS */
+/* get free index on client table, or claim DOS if cant accept more clients */
 int getffi(status_t s, client_t **cbuf) {
     int n = getcid(cbuf, MAX_CLIENT_COUNT);
 
@@ -266,12 +236,14 @@ int getffi(status_t s, client_t **cbuf) {
         /* too much clients */
         sleep(1); /* veery fine but works */
         if(!s.dos) {
-            printf("[%s] DOS - to much clients, server over capacity\n", timestamp(st.tmr_buf));
+            printf("[%s] DOS - to much clients, server over capacity\n",
+                    timestamp(st.tmr_buf));
             s.dos = 1;
         }
     }
     if(s.dos) {
-        printf("[%s] End of DOS - clients accepted back again\n", timestamp(st.tmr_buf));
+        printf("[%s] End of DOS - clients accepted back again\n",
+                timestamp(st.tmr_buf));
     }
     st.dos = 0;
 
