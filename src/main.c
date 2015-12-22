@@ -188,7 +188,7 @@ void *client_thread(void *cln)
         j = 0;
         cb = ' ';
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
-
+        /* like shell, read incoming bytes until end of str/line/file */
         while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
             j = read(c->cfd, &cb, 1);
             if(j == 0 || (ends_cmd(cb) < 0)) {

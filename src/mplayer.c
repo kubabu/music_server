@@ -42,7 +42,7 @@ char *music_root = MUSIC_ROOT;
 void mplayer_parse_cmd(void)
 {
     pthread_mutex_lock(&mplayer_buf_mutex);
-    switch(mplayer_cmdbuf[0]) {
+    switch(mplayer_cmdbuf[MPLAYER_CMD_TYPE]) {
         case '\0':
             if(!play){
                 usleep(100);
