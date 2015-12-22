@@ -28,13 +28,13 @@ static char play;
 static char mplayer_on;
 static off_t pos;
 
-pthread_t mplayer_tid;
-pthread_mutex_t mplayer_buf_mutex;
+static pthread_t mplayer_tid;
+static pthread_mutex_t mplayer_buf_mutex;
 
-char mplayer_cmdbuf[MP_COMMAND_MAX_LEN];
+static char mplayer_cmdbuf[MP_COMMAND_MAX_LEN];
 
 char stamp[TIME_BUFLEN];
-mpg123_handle *mh;
+static mpg123_handle *mh;
 
 char *music_root = MUSIC_ROOT;
 
