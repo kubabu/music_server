@@ -24,8 +24,8 @@
 #define BITS                8
 #define MP_COMMAND_MAX_LEN  512
 
-static char initd;
 static char play;
+static char mplayer_on;
 static off_t pos;
 
 pthread_t mplayer_tid;
@@ -38,6 +38,7 @@ mpg123_handle *mh;
 
 char *music_root = MUSIC_ROOT;
 
+
 void mplayer_parse_cmd(void)
 {
     pthread_mutex_lock(&mplayer_buf_mutex);
@@ -45,8 +46,10 @@ void mplayer_parse_cmd(void)
             case '\0':
                 if(!play){
                     usleep(100);
+                } else {
+                    /* continue playing */
                 }
-/*                write(c->cfd, "\0", 1);  / * pingback */
+/*                write(c->cfd, "\0", 1);  * pingback */
                 break;
             case MPLAYER_PLAY_LOCAL:
                 if(st.verbose) {
@@ -82,18 +85,21 @@ void mplayer_parse_cmd(void)
 
 void *mplayer_thread(void *arg)
 {
-    /* launch new thread with music player */
-    char *cmd_buf = (char *)arg;
     static char mp_thr_on = 0;
+    if(arg != NULL && arg != &mplayer_cmdbuf) {
+        puts("Mplayer initiated without module builtin command buffer.\
+                \n\rThis option is not supported for now");
+    }
+    /* launch new thread with music player */
     if(mp_thr_on++) {
-        pthread_exit(NULL); /* there can be only one */
+        pthread_exit(NULL); /* there is to be only one */
     }
 
     signal(SIGQUIT, &thread_sig_capture);
     signal(SIGINT, &thread_sig_capture);
 
     /* parse commands and execute them */
-    while((memcmp(cmd_buf, "exit", 4) != 0  && !st.exit)) {
+    while(mplayer_on  && !st.exit) {
         /* usleep(100); */
         mplayer_parse_cmd();
     }
@@ -102,19 +108,18 @@ void *mplayer_thread(void *arg)
 
 void mplayer_init(void)
 {
-    static char initd;
-    if(initd++) {
+    static char initiated;
+    if(initiated++) {
         return; /* Already initiated */
     }
     pthread_mutex_init(&mplayer_buf_mutex, NULL);
     play = 0;
-    pthread_create(&mplayer_tid, NULL, mplayer_thread, mplayer_cmdbuf);
+    pthread_create(&mplayer_tid, NULL, mplayer_thread, NULL);
 }
 
 void mplayer_end(void)
 {
-    /* */
-    memcpy(mplayer_cmdbuf, "exit", 5);
+    mplayer_on = 0;
 
     pthread_join(mplayer_tid, NULL);
 
@@ -132,15 +137,16 @@ void mplayer_load_command(char *c, size_t n)
 
 int init_mp3(void)
 {
+    static char initiated;
     static int i = 0;
 
-    if(!initd) {
+    if(!initiated) {
         pthread_mutex_init(&mplayer_buf_mutex, NULL);
         ao_initialize();
         i = ao_default_driver_id();
         mpg123_init();
     }
-    initd = 1;
+    initiated = 1;
     play = 1;
     pos = 1;
 

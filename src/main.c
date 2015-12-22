@@ -218,7 +218,7 @@ void *client_thread(void *cln)
             printf("ordered server shutdown\n");
         }
 #endif
-        /* send commands to client */
+        /* send commands to effector - mpeg player thread */
         mplayer_load_command(cmd_buf, COMMAND_MAX_LEN);
     }
 
