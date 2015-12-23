@@ -31,12 +31,18 @@ static off_t pos;
 static pthread_t mplayer_tid;
 static pthread_mutex_t mplayer_buf_mutex;
 
+static char mp_cmd_mode;
+static char mp_cmd;
 static char mplayer_cmdbuf[MP_COMMAND_MAX_LEN];
 
-char stamp[TIME_BUFLEN];
+static char stamp[TIME_BUFLEN];
 static mpg123_handle *mh;
 
-char *music_root = MUSIC_ROOT;
+static char *music_root = MUSIC_ROOT;
+/* audio output buffer */
+static unsigned char *mpg_buffer;
+static size_t buffer_size = 0;
+static int err;
 
 
 int play_locally(char *path);
@@ -44,7 +50,7 @@ int play_locally(char *path);
 void mplayer_parse_cmd(void)
 {
     pthread_mutex_lock(&mplayer_buf_mutex);
-    switch(mplayer_cmdbuf[MPLAYER_CMD_TYPE]) {
+    switch(mp_cmd_mode) {
         case '\0':
             if(!play){
                 usleep(100);
@@ -55,9 +61,9 @@ void mplayer_parse_cmd(void)
             break;
         case MPLAYER_PLAY_LOCAL:
             if(st.verbose) {
-                printf("play %s\n", mplayer_cmdbuf + 1);
+                printf("play %s\n", mplayer_cmdbuf);
             }
-            play_locally(mplayer_cmdbuf + 1);
+            play_locally(mplayer_cmdbuf);
             break;
         case MPLAYER_SET_PAUSE:
             if(st.verbose) {
@@ -82,6 +88,8 @@ void mplayer_parse_cmd(void)
             break;
     }
     memset(mplayer_cmdbuf, '\0', MP_COMMAND_MAX_LEN);
+    mp_cmd_mode = '\0';
+    mp_cmd = '\0';
     pthread_mutex_unlock(&mplayer_buf_mutex);
 }
 
@@ -116,6 +124,12 @@ void mplayer_init(void)
     }
     mplayer_on = 1;
     pthread_mutex_init(&mplayer_buf_mutex, NULL);
+    /* initiate mpg123 */
+    mpg123_init();
+    mh = mpg123_new(NULL, &err);
+    /* prepare audio output buffer */
+    buffer_size = mpg123_outblock(mh);
+    mpg_buffer = malloc(buffer_size * sizeof(unsigned char));
     play = 0;
     pthread_create(&mplayer_tid, NULL, mplayer_thread, NULL);
 }
@@ -123,17 +137,24 @@ void mplayer_init(void)
 void mplayer_end(void)
 {
     mplayer_on = 0;
-
+    play = 0;
     pthread_join(mplayer_tid, NULL);
-
+    free(mpg_buffer);
+    if(mh != NULL) {
+        mpg123_close(mh);
+        mpg123_delete(mh);
+        mh = NULL;
+    }
 }
 
-void mplayer_load_command(char *c, size_t n)
+void mplayer_load_command(char mode, char cmd, char *c, size_t n)
 {
     /* */
     int count;
-    count = n > MP_COMMAND_MAX_LEN ? MP_COMMAND_MAX_LEN : n;
     pthread_mutex_lock(&mplayer_buf_mutex);
+    mp_cmd_mode = mode;
+    mp_cmd = cmd;
+    count = n > MP_COMMAND_MAX_LEN ? MP_COMMAND_MAX_LEN : n;
     memcpy(mplayer_cmdbuf, c, count);
     pthread_mutex_unlock(&mplayer_buf_mutex);
 }
@@ -144,7 +165,6 @@ int init_mp3(void)
     static int i = 0;
 
     if(!initiated) {
-        pthread_mutex_init(&mplayer_buf_mutex, NULL);
         ao_initialize();
         i = ao_default_driver_id();
         mpg123_init();
@@ -182,18 +202,11 @@ int play_local(char *path)
     int driver;
     ao_device *dev;
     ao_sample_format format;
-    unsigned char *buffer;
-    int err;
     int channels, encoding;
     long rate;
-    size_t buffer_size;
     size_t done;
 
     driver = init_mp3();
-
-    mh = mpg123_new(NULL, &err);
-    buffer_size = mpg123_outblock(mh);
-    buffer = malloc(buffer_size * sizeof(unsigned char));
 
     mpg123_open(mh, path);
     mpg123_getformat(mh, &rate, &channels, &encoding);
@@ -205,12 +218,11 @@ int play_local(char *path)
     format.matrix = 0;
     dev = ao_open_live(driver, &format, NULL);
 
-    while(mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK && play) {
-      ao_play(dev, (char*)buffer, done);
+    while(mpg123_read(mh, mpg_buffer, buffer_size, &done) == MPG123_OK && play) {
+      ao_play(dev, (char*)mpg_buffer, done);
     }
-    free(buffer);
+    free(mpg_buffer);
     ao_close(dev);
-    mpg123_exit();
     ao_shutdown();
 
     return err;
