@@ -9,3 +9,4 @@ lib/mpg123*
 requirements/zadania.pdf
 *.sublime-project
 *.sublime-workspace
+.fuse_hidden*

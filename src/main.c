@@ -18,7 +18,6 @@
 #include "utils.h"
 
 
-#define DEBUG
 #define DETACHED
 
 
@@ -289,7 +288,9 @@ int main(int argc, char *argv[])
         perror("Problem with binding socket");
         return 1;
     }
-
+#ifdef DEBUG
+    puts("DEBUG mode is on!");
+#endif
 
     st.verbose = 1;
     /* display info on startup */

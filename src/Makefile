@@ -3,6 +3,8 @@ IDIR =../include
 CFLAGS= -I$(IDIR) -Wall -Wextra -pedantic ## -Werror
 LDFLAGS= #-static
 
+CFLAGS += -DDEBUG
+
 ## Project structure
 ODIR=./obj
 LDIR =../lib
