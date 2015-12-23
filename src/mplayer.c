@@ -39,6 +39,8 @@ static mpg123_handle *mh;
 char *music_root = MUSIC_ROOT;
 
 
+int play_locally(char *path);
+
 void mplayer_parse_cmd(void)
 {
     pthread_mutex_lock(&mplayer_buf_mutex);
@@ -55,7 +57,7 @@ void mplayer_parse_cmd(void)
             if(st.verbose) {
                 printf("play %s\n", mplayer_cmdbuf + 1);
             }
-            /* play_locally(cmd_buf + 1); */
+            play_locally(mplayer_cmdbuf + 1);
             break;
         case MPLAYER_SET_PAUSE:
             if(st.verbose) {
