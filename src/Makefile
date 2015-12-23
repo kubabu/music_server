@@ -3,7 +3,9 @@ IDIR =../include
 CFLAGS= -I$(IDIR) -Wall -Wextra -pedantic ## -Werror
 LDFLAGS= #-static
 
-CFLAGS += -DDEBUG
+## Debug build
+CFLAGS += -g -DDEBUG
+
 
 ## Project structure
 ODIR=./obj

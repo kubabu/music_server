@@ -43,6 +43,7 @@ static char *music_root = MUSIC_ROOT;
 static unsigned char *mpg_buffer;
 static size_t buffer_size = 0;
 static int err;
+static ao_device *dev;
 
 
 int play_locally(char *path);
@@ -145,6 +146,7 @@ void mplayer_end(void)
         mpg123_delete(mh);
         mh = NULL;
     }
+    ao_shutdown();
 }
 
 void mplayer_load_command(char mode, char cmd, char *c, size_t n)
@@ -194,13 +196,45 @@ int close_mp3(void)
     return 0;
 }
 
-/* This function is inspired by article of Johnny Huang
- * http://hzqtc.github.io/2012/05/play-mp3-with-libmpg123-and-libao.html
- */
+/* get path of file and play it till the end */
 int play_local(char *path)
 {
     int driver;
-    ao_device *dev;
+    ao_sample_format format;
+    int channels, encoding;
+    long rate;
+    size_t done;
+
+
+    driver = init_mp3();
+    /* so mpg123_encsize don't use uninitialised value */
+    encoding = 0;
+
+    mpg123_open(mh, path);
+    mpg123_getformat(mh, &rate, &channels, &encoding);
+
+    format.bits = mpg123_encsize(encoding) * BITS;
+    format.rate = rate;
+    format.channels = channels;
+    format.byte_format = AO_FMT_NATIVE;
+    format.matrix = 0;
+    dev = ao_open_live(driver, &format, NULL);
+
+    while(mpg123_read(mh, mpg_buffer, buffer_size, &done) == MPG123_OK && play) {
+      ao_play(dev, (char*)mpg_buffer, done);
+    }
+    ao_close(dev);
+    ao_shutdown();
+
+    return err;
+}
+
+/* This function is inspired by article of Johnny Huang
+ * http://hzqtc.github.io/2012/05/play-mp3-with-libmpg123-and-libao.html
+ */
+int _play_local(char *path)
+{
+    int driver;
     ao_sample_format format;
     int channels, encoding;
     long rate;
@@ -238,11 +272,19 @@ int play_locally(char *path)
     memcpy(fullpath, music_root, strlen(music_root));
     memcpy(fullpath + strlen(MUSIC_ROOT), path, strlen(path));
 
+    if(path[0] == '\0') {
+        /* empty path */
+        if(st.verbose) {
+            printf("play_locally called with empty path");
+        }
+        return -1;
+    }
+
     if (access(fullpath, F_OK) != -1) {
         printf("[%s] Now playing: %s\n", timestamp(stamp), fullpath);
         play_local(fullpath);
     } else {
-        printf("%s: file not found\n", path);
+        printf("%s: file not found {%s}\n", path, fullpath);
         /* file doesn't exist, something went wrong */
         return -1;
     }
