@@ -1,0 +1,291 @@
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+   fun:snd_config_hook_load_for_all_cards
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_update_r
+   fun:snd_config_update
+   fun:snd_pcm_open
+   obj:*
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_update_r
+   fun:snd_config_update
+   fun:snd_pcm_open
+   obj:*
+   obj:/usr/lib/x86_64-linux-gnu/libao.so.4.0.0
+   fun:play_local
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_run_once
+   fun:pa_hashmap_put
+   fun:pa_proplist_sets
+   fun:pa_context_new_with_proplist
+   obj:/usr/lib/x86_64-linux-gnu/alsa-lib/libasound_module_pcm_pulse.so
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_searcha_hooks
+   fun:snd_config_searchva_hooks
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_run_once
+   fun:pa_pstream_send_packet
+   fun:pa_pstream_send_tagstruct_with_creds
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_mainloop_dispatch
+   fun:pa_mainloop_iterate
+   obj:/usr/lib/x86_64-linux-gnu/alsa-lib/libasound_module_pcm_pulse.so
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_run_once
+   fun:pa_queue_push
+   fun:pa_pstream_send_packet
+   fun:pa_pstream_send_tagstruct_with_creds
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_mainloop_dispatch
+   fun:pa_mainloop_iterate
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_run_once
+   fun:pa_pdispatch_register_reply
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_mainloop_dispatch
+   fun:pa_mainloop_iterate
+   obj:/usr/lib/x86_64-linux-gnu/alsa-lib/libasound_module_pcm_pulse.so
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:pa_xmalloc0
+   fun:pa_flist_new_with_name
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   fun:pa_run_once
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   fun:pa_stream_update_timing_info
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+   obj:/usr/lib/x86_64-linux-gnu/pulseaudio/libpulsecommon-4.0.so
+   fun:pa_pdispatch_run
+   obj:/usr/lib/x86_64-linux-gnu/libpulse.so.0.16.2
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_check_map_versions
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+   fun:_dlerror_run
+   fun:dlopen@@GLIBC_2.2.5
+   fun:ao_initialize
+   fun:init_mp3
+   fun:play_local
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+   fun:snd_config_hook_load_for_all_cards
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+   fun:snd_config_hook_load_for_all_cards
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+   fun:snd_config_hook_load_for_all_cards
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+}
+
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+   fun:snd_config_hook_load_for_all_cards
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_searcha_hooks
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   obj:/usr/lib/x86_64-linux-gnu/libasound.so.2.0.0
+   fun:snd_config_hook_load
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   fun:_dl_new_object
+   fun:_dl_map_object_from_fd
+   fun:_dl_map_object
+   fun:openaux
+   fun:_dl_catch_error
+   fun:_dl_map_object_deps
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+   fun:dlopen_doit
+   fun:_dl_catch_error
+}
+

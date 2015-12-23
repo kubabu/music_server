@@ -207,6 +207,8 @@ int play_local(char *path)
     size_t done;
 
     driver = init_mp3();
+    /* so mpg123_encsize don't use uninitialised value */
+    encoding = 0;
 
     mpg123_open(mh, path);
     mpg123_getformat(mh, &rate, &channels, &encoding);
