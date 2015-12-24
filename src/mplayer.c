@@ -44,6 +44,7 @@ static unsigned char *mpg_buffer;
 static size_t buffer_size = 0;
 static int err;
 static ao_device *dev;
+int driver;
 
 
 int play_locally(char *path);
@@ -63,10 +64,10 @@ void mplayer_parse_cmd(void)
                 printf("play %s\n", mplayer_cmdbuf);
             }
             play_locally(mplayer_cmdbuf);
-            break;
             if(st.verbose) {
                 printf("playing %s ended \n", mplayer_cmdbuf);
             }
+            break;
         case MPLAYER_SET_PAUSE:
             if(st.verbose) {
                 printf("pause\n");
@@ -203,7 +204,6 @@ int close_mp3(void)
 /* get path of file and play it till the end */
 int play_local(char *path)
 {
-    int driver;
     ao_sample_format format;
     int channels, encoding;
     long rate;
