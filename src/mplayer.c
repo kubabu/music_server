@@ -50,15 +50,13 @@ int play_locally(char *path);
 
 void mplayer_parse_cmd(void)
 {
+    if((mp_cmd_mode == '\0') && !play){
+        usleep(100);
+    }
+
     pthread_mutex_lock(&mplayer_buf_mutex);
     switch(mp_cmd_mode) {
         case '\0':
-            if(!play){
-                usleep(100);
-            } else {
-                /* continue playing */
-            }
-/*                write(c->cfd, "\0", 1);  * pingback */
             break;
         case MPLAYER_PLAY_LOCAL:
             if(st.verbose) {
@@ -66,6 +64,9 @@ void mplayer_parse_cmd(void)
             }
             play_locally(mplayer_cmdbuf);
             break;
+            if(st.verbose) {
+                printf("playing %s ended \n", mplayer_cmdbuf);
+            }
         case MPLAYER_SET_PAUSE:
             if(st.verbose) {
                 printf("pause\n");
@@ -123,7 +124,9 @@ void mplayer_init(void)
     if(initiated++) {
         return; /* Already initiated */
     }
+    /* mplayer is turned on, but not playing anything yet */
     mplayer_on = 1;
+    play = 0;
     pthread_mutex_init(&mplayer_buf_mutex, NULL);
     /* initiate mpg123 */
     mpg123_init();
@@ -131,7 +134,9 @@ void mplayer_init(void)
     /* prepare audio output buffer */
     buffer_size = mpg123_outblock(mh);
     mpg_buffer = malloc(buffer_size * sizeof(unsigned char));
-    play = 0;
+    /* init libao */
+    ao_initialize();
+
     pthread_create(&mplayer_tid, NULL, mplayer_thread, NULL);
 }
 
@@ -167,7 +172,6 @@ int init_mp3(void)
     static int i = 0;
 
     if(!initiated) {
-        ao_initialize();
         i = ao_default_driver_id();
         mpg123_init();
     }
@@ -205,8 +209,8 @@ int play_local(char *path)
     long rate;
     size_t done;
 
-
     driver = init_mp3();
+    /* driver = ao_default_driver_id(); */
     /* so mpg123_encsize don't use uninitialised value */
     encoding = 0;
 
@@ -224,7 +228,7 @@ int play_local(char *path)
       ao_play(dev, (char*)mpg_buffer, done);
     }
     ao_close(dev);
-    ao_shutdown();
+    play = 0;
 
     return err;
 }
