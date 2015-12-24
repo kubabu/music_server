@@ -43,8 +43,11 @@ static char *music_root = MUSIC_ROOT;
 static unsigned char *mpg_buffer;
 static size_t buffer_size = 0;
 static int err;
+/* for libao */
 static ao_device *dev;
-int driver;
+static ao_sample_format format;
+static int driver;
+static size_t done;
 
 
 int play_locally(char *path);
@@ -201,18 +204,20 @@ int close_mp3(void)
     return 0;
 }
 
-/* get path of file and play it till the end */
-int play_local(char *path)
+/* get path of file and play it till the end
+ * This function is inspired by article of Johnny Huang
+ * http://hzqtc.github.io/2012/05/play-mp3-with-libmpg123-and-libao.html
+ */
+int _play_local(char *path)
 {
     ao_sample_format format;
     int channels, encoding;
     long rate;
-    size_t done;
 
-    driver = init_mp3();
-    /* driver = ao_default_driver_id(); */
+    play = 1;
     /* so mpg123_encsize don't use uninitialised value */
     encoding = 0;
+    driver = ao_default_driver_id();
 
     mpg123_open(mh, path);
     mpg123_getformat(mh, &rate, &channels, &encoding);
@@ -233,20 +238,16 @@ int play_local(char *path)
     return err;
 }
 
-/* This function is inspired by article of Johnny Huang
- * http://hzqtc.github.io/2012/05/play-mp3-with-libmpg123-and-libao.html
- */
-int _play_local(char *path)
+
+void start_playing_local(char *path)
 {
-    int driver;
-    ao_sample_format format;
     int channels, encoding;
     long rate;
-    size_t done;
 
-    driver = init_mp3();
+    play = 1;
     /* so mpg123_encsize don't use uninitialised value */
     encoding = 0;
+    driver = ao_default_driver_id();
 
     mpg123_open(mh, path);
     mpg123_getformat(mh, &rate, &channels, &encoding);
@@ -257,17 +258,29 @@ int _play_local(char *path)
     format.byte_format = AO_FMT_NATIVE;
     format.matrix = 0;
     dev = ao_open_live(driver, &format, NULL);
-
-    while(mpg123_read(mh, mpg_buffer, buffer_size, &done) == MPG123_OK && play) {
-      ao_play(dev, (char*)mpg_buffer, done);
-    }
-    free(mpg_buffer);
-    ao_close(dev);
-    ao_shutdown();
-
-    return err;
 }
 
+int continue_play_local(void)
+{
+    int stat = mpg123_read(mh, mpg_buffer, buffer_size, &done);
+    if((stat == MPG123_OK) && play) {
+      ao_play(dev, (char*)mpg_buffer, done);
+    }
+    return stat == MPG123_OK ? 1 : 0;
+}
+
+void stop_play_local(void)
+{
+    ao_close(dev);
+    play = 0;
+}
+
+void play_local(char *path)
+{
+    start_playing_local(path);
+    while(continue_play_local());
+    stop_play_local();
+}
 
 int play_locally(char *path)
 {
