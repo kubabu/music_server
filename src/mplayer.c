@@ -244,6 +244,9 @@ void start_playing_local(char *path)
     int channels, encoding;
     long rate;
 
+    if(play) {
+        ao_close(dev);
+    }
     play = 1;
     /* so mpg123_encsize don't use uninitialised value */
     encoding = 0;
@@ -260,26 +263,30 @@ void start_playing_local(char *path)
     dev = ao_open_live(driver, &format, NULL);
 }
 
+void stop_play_local(void)
+{
+    play = 0;
+    ao_close(dev);
+    dev = 0;
+}
+
 int continue_play_local(void)
 {
     int stat = mpg123_read(mh, mpg_buffer, buffer_size, &done);
-    if((stat == MPG123_OK) && play) {
-      ao_play(dev, (char*)mpg_buffer, done);
+    if(stat == MPG123_OK) {
+        if(play) {
+          ao_play(dev, (char*)mpg_buffer, done);
+        }
+    } else {
+        stop_play_local();
     }
     return stat == MPG123_OK ? 1 : 0;
-}
-
-void stop_play_local(void)
-{
-    ao_close(dev);
-    play = 0;
 }
 
 void play_local(char *path)
 {
     start_playing_local(path);
     while(continue_play_local());
-    stop_play_local();
 }
 
 int play_locally(char *path)
