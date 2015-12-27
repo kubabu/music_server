@@ -53,6 +53,8 @@ static size_t done;
 void stop_play_local(void);
 int continue_play_local(void);
 int play_locally(char *path);
+void mplayer_pause(void);
+void mplayer_stop(void);
 
 void mplayer_parse_cmd(void)
 {
@@ -78,11 +80,13 @@ void mplayer_parse_cmd(void)
                 if(st.verbose) {
                     printf("pause\n");
                 }
+                mplayer_pause();
                 break;
             case MPLAYER_SET_STOP:
                 if(st.verbose) {
                     printf("stop\n");
                 }
+                mplayer_stop();
                 break;
             case MPLAYER_SET_VOL_UP:
                 if(st.verbose) {
@@ -233,10 +237,12 @@ void start_playing_local(char *path)
 
     /* check for empty path */
     if((path == NULL) || (path[0] == '\0')) {
-        if(st.verbose) {
-            printf("player called with empty path");
+        if(last_played_path[0] == '\0'){
+            if(st.verbose) {
+                printf("start play called w.out path or prevoius track");
+            }
+            return;
         }
-        return;
     } else {
         /* check for too long path */
         if(strlen(path) > COMMAND_MAX_LEN) {
@@ -333,10 +339,22 @@ int play_locally(char *path)
     return 0;
 }
 
-
+/* toggle pause switch */
 void mplayer_pause(void)
 {
+    play = (play + 1) % 2;
+    if(st.verbose) {
+        printf("pause: play=%d\n", play);
+    }
+}
+
+void mplayer_stop(void)
+{
     play = 0;
+    stop_play_local();
+    if(st.verbose) {
+        printf("stop\n");
+    }
 }
 
 void mplayer_louder(void)
