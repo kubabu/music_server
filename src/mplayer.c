@@ -24,8 +24,8 @@
 #define BITS                8
 #define MP_COMMAND_MAX_LEN  512
 
-static char play;
 static char mplayer_on;
+static char play;
 
 static pthread_t mplayer_tid;
 static pthread_mutex_t mplayer_buf_mutex;
@@ -38,18 +38,19 @@ static char stamp[TIME_BUFLEN];
 static mpg123_handle *mh;
 
 static char *music_root = MUSIC_ROOT;
-static char *last_played_path[MP_COMMAND_MAX_LEN];
+static char last_played_path[MP_COMMAND_MAX_LEN];
 /* audio output buffer */
 static unsigned char *mpg_buffer;
 static size_t buffer_size = 0;
 static int err;
 /* for libao */
-static ao_device *dev;
+static ao_device *dev = NULL;
 static ao_sample_format format;
 static int driver;
 static size_t done;
 
 
+void stop_play_local(void);
 int continue_play_local(void);
 int play_locally(char *path);
 
@@ -62,7 +63,7 @@ void mplayer_parse_cmd(void)
 
     pthread_mutex_lock(&mplayer_buf_mutex);
     switch(mp_cmd_mode) {
-        case '\0':
+        case MPLAYER_MODE_PASS:
             continue_play_local();
             break;
         case MPLAYER_MODE_PLAY:
@@ -70,9 +71,6 @@ void mplayer_parse_cmd(void)
                 printf("play %s\n", mplayer_cmdbuf);
             }
             play_locally(mplayer_cmdbuf);
-            if(st.verbose) {
-                printf("playing %s ended \n", mplayer_cmdbuf);
-            }
             break;
         case MPLAYER_MODE_SET:
             switch(mp_cmd) {
@@ -113,7 +111,7 @@ void mplayer_parse_cmd(void)
             break;
     }
     memset(mplayer_cmdbuf, '\0', MP_COMMAND_MAX_LEN);
-    mp_cmd_mode = '\0';
+    mp_cmd_mode = MPLAYER_MODE_PASS;
     mp_cmd = '\0';
     pthread_mutex_unlock(&mplayer_buf_mutex);
 }
@@ -174,6 +172,7 @@ void mplayer_end(void)
         mpg123_delete(mh);
         mh = NULL;
     }
+    stop_play_local();
     ao_shutdown();
 }
 
@@ -232,31 +231,30 @@ void start_playing_local(char *path)
     int channels, encoding;
     long rate;
 
-    /* close prevoiusly opened */
-    if(play) {
-        ao_close(dev);
-    }
-    /* check for too long path */
-    if(strlen(path) > COMMAND_MAX_LEN) {
-        puts("Received path is too long, aborting playing");
-        return;
-    } else {
-        memcpy(last_played_path, path, strlen(path) + 1);
-    }
     /* check for empty path */
-    if(path[0] == '\0') {
+    if((path == NULL) || (path[0] == '\0')) {
         if(st.verbose) {
             printf("player called with empty path");
         }
         return;
+    } else {
+        /* check for too long path */
+        if(strlen(path) > COMMAND_MAX_LEN) {
+            puts("Received path is too long, aborting playing");
+            return;
+        } else {
+            memcpy(last_played_path, path, strlen(path) + 1);
+        }
     }
+    /* make sure the device is not opened */
+    stop_play_local();
 
     play = 1;
     /* set encoding so mpg123_encsize don't use uninitialised value */
     encoding = 0;
     driver = ao_default_driver_id();
 
-    mpg123_open(mh, path);
+    mpg123_open(mh, (char *)last_played_path);
     mpg123_getformat(mh, &rate, &channels, &encoding);
 
     format.bits = mpg123_encsize(encoding) * BITS;
@@ -267,13 +265,17 @@ void start_playing_local(char *path)
     dev = ao_open_live(driver, &format, NULL);
 }
 
+/* end playing of track */
 void stop_play_local(void)
 {
     play = 0;
-    ao_close(dev);
-    dev = 0;
+    if(dev != NULL) {
+        ao_close(dev);
+        dev = NULL;
+    }
 }
 
+/* if play is non-zero, read next frame and play it */
 int continue_play_local(void)
 {
     int stat = 0;
@@ -283,6 +285,9 @@ int continue_play_local(void)
             ao_play(dev, (char*)mpg_buffer, done);
         } else {
             stop_play_local();
+            if(st.verbose) {
+                printf("Playing %s ended\n", last_played_path);
+            }
         }
     }
     return stat == MPG123_OK ? 1 : 0;
@@ -301,17 +306,25 @@ int play_locally(char *path)
     memcpy(fullpath, music_root, strlen(music_root));
     memcpy(fullpath + strlen(MUSIC_ROOT), path, strlen(path));
 
-    if(path[0] == '\0') {
-        /* empty path */
-        if(st.verbose) {
-            printf("play_locally called with empty path");
+    if((path == NULL) || (path[0] == '\0')) {
+       /* no legit path given */
+        /* check if there is paused track */
+        if((last_played_path[0] == '\0') || (dev == NULL)) {
+            /* invalid call */
+            if(st.verbose) {
+                printf("play_locally w.out path or prevoiusly opened track");
+            }
+            return -1;
+        } else {
+            play = 1;
+            return 0;
         }
-        return -1;
+
     }
 
     if (access(fullpath, F_OK) != -1) {
         printf("[%s] Now playing: %s\n", timestamp(stamp), fullpath);
-        play_local(fullpath);
+        start_playing_local(fullpath);
     } else {
         printf("%s: file not found {%s}\n", path, fullpath);
         /* file doesn't exist, something went wrong */
@@ -323,7 +336,7 @@ int play_locally(char *path)
 
 void mplayer_pause(void)
 {
-
+    play = 0;
 }
 
 void mplayer_louder(void)
