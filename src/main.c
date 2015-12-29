@@ -175,20 +175,19 @@ void *client_thread(void *cln)
     connect = 1;
 
     write(c->cfd, "Client accepted", 16);
-    /*
-    send JSON with mp3 root
-    */
-    printf("%s\n", mplayer_dir());
-     while(connect && !st.exit) {
+    while(connect && !st.exit) {
         /* listen for client commands */
         char cb;
         int i, j;
+
+        char cmd_mode, cmd_par;
+        char *extra_cmd_buf;
 
         i = 0;
         j = 0;
         cb = ' ';
         memset(cmd_buf, '\0', COMMAND_MAX_LEN);
-        /* like shell, read incoming bytes until end of str/line/file */
+        /* like a shell, read incoming bytes until end of str/line/file */
         while(!ends_cmd(cb) && i < COMMAND_MAX_LEN && connect) {
             j = read(c->cfd, &cb, 1);
             if(j == 0 || (ends_cmd(cb) < 0)) {
@@ -203,24 +202,48 @@ void *client_thread(void *cln)
         }
         cmd_buf[i] = '\0';
 
-        /*
-        i = read_command(cmd_buf, COMMAND_MAX_LEN, c->cfd, &connect);
-         parse command */
+        cmd_mode = cmd_buf[0];
+        cmd_par = cmd_buf[1];
+        extra_cmd_buf = cmd_buf + 2;
+
+        /* parse command */
 
         if(st.verbose && i) {
             printf("[%s] Client %d: ", timestamp(st.tmr_buf), cid);
         }
+        switch(cmd_mode) {
+        case 'v':
+        /* switch verbosity */
+            if(cmd_buf[1] == '0') {
+                printf("verbose mode is off\n");
+                st.verbose = 0;
+            } else if(cmd_buf[1] == '1') {
+                printf("verbose mode is on\n");
+                st.verbose = 1;
+            }
+            break;
+        case 'l':
+            if(cmd_par == 'l') {
+            /* send JSON with mp3 root */
+                json_list_mp3s(c->cfd, mplayer_dir());
+            }
+            break;
 #ifdef DEBUG
         /* check if client didn't ordered server shutdown */
-        if(memcmp(cmd_buf, "exit", 4) == 0) {
-        write(c->cfd, "SERVER EXIT\n", 13);
-            st.exit = 1;
-            printf("ordered server shutdown\n");
+        case 'e':
+            if(memcmp(cmd_buf, "exit", 4) == 0) {
+                write(c->cfd, "SERVER EXIT\n", 13);
+                st.exit = 1;
+                printf("ordered server shutdown\n");
+            }
             break;
-        };
 #endif
+        default:
         /* send commands to effector - mpeg player thread */
-        mplayer_load_command(cmd_buf[0], cmd_buf[1], cmd_buf+2, COMMAND_MAX_LEN);
+            mplayer_load_command(cmd_mode, cmd_par, extra_cmd_buf,
+                    COMMAND_MAX_LEN);
+            break;
+        }
     }
 
     ct_close(cid);
@@ -292,9 +315,11 @@ int main(int argc, char *argv[])
     }
 #ifdef DEBUG
     puts("DEBUG mode is on!");
+    st.verbose = 1;
+#else
+    st.verbose = 0;
 #endif
 
-    st.verbose = 1;
     /* display info on startup */
     if(st.verbose) {
         printf("[%s] now on IP %s Port %d \n[%s] Ready, PID=%d, [%ld]\n",

@@ -86,4 +86,6 @@ int printcl(client_t *cl, int i);
 
 void thread_sig_capture(int sig);
 
+void json_list_mp3s(int cfd, const char *path);
+
 #endif

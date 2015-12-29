@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -185,5 +186,45 @@ void thread_sig_capture(int sig) {
     printf("\rThread intercepted signal %d\n", sig);
     st.exit = 1;
     shutdown(st.sfd, SHUT_RDWR);
+}
+
+#define swrite(c, s)    write(c, s, strlen(s))
+
+/* list all mp3 files in directory */
+void json_list_mp3s(int cfd, const char *path)
+{
+    char many = 0;
+    char *fname;
+    DIR *d;
+    struct dirent *dir;
+
+    char *starttoken = "{\"tracks\":[\n";
+    char *endtoken = "\n]}\n";
+
+    d = opendir(path);
+
+    swrite(cfd, starttoken);
+
+    if(d) {
+        while((dir = readdir(d)) != NULL) {
+            if(dir->d_type == DT_REG) {
+                fname = dir->d_name;
+                if(strlen(fname) > 4 && !strcmp(fname + strlen(fname) - 4, ".mp3")) {
+                    if(many) {
+                        swrite(cfd, ",\n");
+                    } else {
+                        many = 1;
+                    }
+                    swrite(cfd, "{\"path\":\"");
+                    swrite(cfd, path);
+                    swrite(cfd, fname);
+                    swrite(cfd, "\"}");
+                }
+            }
+        }
+        closedir(d);
+    }
+    swrite(cfd, endtoken);
+    swrite(cfd, "\0");
 }
 
