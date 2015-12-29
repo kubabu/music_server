@@ -175,6 +175,7 @@ void *client_thread(void *cln)
     connect = 1;
 
     write(c->cfd, "Client accepted", 16);
+
     while(connect && !st.exit) {
         /* listen for client commands */
         char cb;
@@ -225,7 +226,11 @@ void *client_thread(void *cln)
         case 'l':
             if(cmd_par == 'l') {
             /* send JSON with mp3 root */
+                puts("Send JSON");
                 json_list_mp3s(c->cfd, mplayer_dir());
+                if(st.verbose) {
+                    json_list_mp3s(STDOUT_FILENO, mplayer_dir());
+                }
             }
             break;
 #ifdef DEBUG

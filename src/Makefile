@@ -44,6 +44,9 @@ CLIENT_OBJ = $(patsubst %,$(ODIR)/%,$(_CLIENT_OBJ))
 client: $(CLIENT_OBJ)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
 
+idv3dump: idv3dump.o
+	$(CC) $^ $(LDFLAGS) $(LIBS) -o $(BINDIR)/$@
+
 .PHONY: all clean clean_build
 
 clean_build: clean all

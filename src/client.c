@@ -29,7 +29,7 @@ void safe_exit(int sig);
 void *rdthread(void *buf)
 {
     io_buffer_t *rdbuf = io_buf_init(buf);
-
+    char prev = '\0';
     char c = '\0';
 
     while(read_on) {
@@ -39,15 +39,18 @@ void *rdthread(void *buf)
                 printf("\nGot EOF from server\n");
             }
           /*  write(conn_fd, &c, 1); */
-            read_on = 0;
-            break;
+            if(prev == EOF) {
+                read_on = 0;
+                break;
+            }
         }
+        prev = c;
         printf("%c", c);
-
+/*
         io_buf_write(rdbuf, c);
         while(rdbuf->st == BUFFER_FULL && read_on) {
             sleep(1);
-        }
+        } */
     }
 
     if(rdbuf != buf) {

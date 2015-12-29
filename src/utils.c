@@ -7,6 +7,10 @@
 #include <unistd.h>
 
 #include "utils.h"
+#include "mpg123.h"
+
+#define swrite(c, s)    write(c, s, strlen(s))
+
 
 io_buffer_t *io_buf_init(io_buffer_t *buf)
 {
@@ -188,20 +192,61 @@ void thread_sig_capture(int sig) {
     shutdown(st.sfd, SHUT_RDWR);
 }
 
-#define swrite(c, s)    write(c, s, strlen(s))
+void json_mp3(int cfd, const char *path)
+{
+    int meta;
+    mpg123_handle* m;
+    mpg123_id3v1 *v1;
+    mpg123_id3v2 *v2;
+
+    mpg123_init();
+    m = mpg123_new(NULL, NULL);
+
+    if(mpg123_open(m, path) != MPG123_OK) {
+        fprintf(stderr, "Cannot open %s: %s\n", path, mpg123_strerror(m));
+    }
+    mpg123_scan(m);
+    meta = mpg123_meta_check(m);
+    if(meta & MPG123_ID3 && mpg123_id3(m, &v1, &v2) == MPG123_OK) {
+
+        swrite(cfd, "{\"path\":\"");
+        swrite(cfd, path);
+        if(v2->title != NULL && v2->title->fill) {
+            swrite(cfd, "\",\"title\":\"");
+            write(cfd, v2->title->p, v2->title->fill);
+        }
+        if(v2->artist != NULL && v2->artist->fill) {
+            swrite(cfd, "\",\"artist\":\"");
+            write(cfd, v2->artist->p, v2->artist->fill);
+        }
+        if(v2->year != NULL && v2->year->fill) {
+            swrite(cfd, "\",\"year\":\"");
+            write(cfd, v2->year->p, v2->year->fill);
+        }
+        if(v2->genre != NULL && v2->genre->fill) {
+            swrite(cfd, "\",\"genre\":\"");
+            write(cfd, v2->genre->p, v2->genre->fill);
+        }
+        swrite(cfd, "\"}");
+    }
+}
 
 /* list all mp3 files in directory */
 void json_list_mp3s(int cfd, const char *path)
 {
     char many = 0;
+    char fullpath[COMMAND_MAX_LEN];
+    int pos;
     char *fname;
     DIR *d;
     struct dirent *dir;
 
-    char *starttoken = "{\"tracks\":[\n";
-    char *endtoken = "\n]}\n";
+    char *starttoken = "{\"tracks\":[";
+    char *endtoken = "]}";
 
     d = opendir(path);
+    strncpy(fullpath, path, COMMAND_MAX_LEN);
+    pos = strlen(path);
 
     swrite(cfd, starttoken);
 
@@ -211,20 +256,19 @@ void json_list_mp3s(int cfd, const char *path)
                 fname = dir->d_name;
                 if(strlen(fname) > 4 && !strcmp(fname + strlen(fname) - 4, ".mp3")) {
                     if(many) {
-                        swrite(cfd, ",\n");
+                        swrite(cfd, ",");
                     } else {
                         many = 1;
                     }
-                    swrite(cfd, "{\"path\":\"");
-                    swrite(cfd, path);
-                    swrite(cfd, fname);
-                    swrite(cfd, "\"}");
+                    strncpy(fullpath + pos, fname, COMMAND_MAX_LEN - pos);
+                    json_mp3(cfd, fullpath);
                 }
             }
         }
         closedir(d);
     }
     swrite(cfd, endtoken);
-    swrite(cfd, "\0");
+    many = EOF;
+    swrite(cfd, &many);
 }
 
