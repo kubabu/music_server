@@ -321,19 +321,17 @@ int play_locally(char *path)
     memcpy(fullpath + strlen(MUSIC_ROOT), path, strlen(path));
 
     if((path == NULL) || (path[0] == '\0')) {
-       /* no legit path given */
+        /* no legit path given */
         /* check if there is paused track */
-        if((last_played_path[0] == '\0') || (dev == NULL)) {
+        if((last_played_path[0] == '\0')) {
             /* invalid call */
             if(st.verbose) {
                 printf("play_locally w.out path or prevoiusly opened track");
             }
             return -1;
         } else {
-            play = 1;
-            return 0;
+            memcpy(fullpath, last_played_path, strlen(last_played_path));
         }
-
     }
 
     if (access(fullpath, F_OK) != -1) {

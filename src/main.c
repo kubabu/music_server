@@ -218,9 +218,7 @@ void *client_thread(void *cln)
         }
 #endif
         /* send commands to effector - mpeg player thread */
-        puts("Sending command from client to mplayer");
         mplayer_load_command(cmd_buf[0], cmd_buf[1], cmd_buf+2, COMMAND_MAX_LEN);
-        puts("command from client to mplayer sent");
     }
 
     ct_close(cid);
