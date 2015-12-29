@@ -15,7 +15,7 @@
 #define MAX_CLIENT_COUNT        5
 
 /* Serious business */
-#define PASS_LENGTH             5
+#define PASS_LENGTH             4
 #define PASS 'root'
 
 /* aggregate parameters for client thread */

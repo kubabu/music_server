@@ -37,7 +37,8 @@ static char mplayer_cmdbuf[MP_COMMAND_MAX_LEN];
 static char stamp[TIME_BUFLEN];
 static mpg123_handle *mh;
 
-static char *music_root = MUSIC_ROOT;
+char *music_root = MUSIC_ROOT;
+static char music_dir[MP_COMMAND_MAX_LEN];
 static char last_played_path[MP_COMMAND_MAX_LEN];
 /* audio output buffer */
 static unsigned char *mpg_buffer;
@@ -108,6 +109,9 @@ void mplayer_parse_cmd(void)
                 break;
             }
             break;
+        case MPLAYER_MODE_LIST:
+
+            break;
         case MPLAYER_MODE_EXIT:
             if(mp_cmd == MPLAYER_EXIT_CMD) {
                 mplayer_on = 0;
@@ -143,6 +147,7 @@ void *mplayer_thread(void *arg)
     signal(SIGQUIT, &thread_sig_capture);
     signal(SIGINT, &thread_sig_capture);
 
+    strncpy(music_dir, music_root, strlen(music_root) + 1);
     /* parse commands and execute them */
     while(mplayer_on  && !st.exit) {
         /* usleep(100); */
@@ -201,6 +206,13 @@ void mplayer_load_command(char mode, char cmd, char *c, size_t n)
     }
     pthread_mutex_unlock(&mplayer_buf_mutex);
 }
+
+/* return current directory; it can be changed only via commands */
+const char *mplayer_dir(void)
+{
+    return (char *)music_dir;
+}
+
 
 /* get path of file and play it till the end
  * This function is inspired by article of Johnny Huang

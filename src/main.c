@@ -178,6 +178,7 @@ void *client_thread(void *cln)
     /*
     send JSON with mp3 root
     */
+    printf("%s\n", mplayer_dir());
      while(connect && !st.exit) {
         /* listen for client commands */
         char cb;
@@ -215,7 +216,8 @@ void *client_thread(void *cln)
         write(c->cfd, "SERVER EXIT\n", 13);
             st.exit = 1;
             printf("ordered server shutdown\n");
-        }
+            break;
+        };
 #endif
         /* send commands to effector - mpeg player thread */
         mplayer_load_command(cmd_buf[0], cmd_buf[1], cmd_buf+2, COMMAND_MAX_LEN);
