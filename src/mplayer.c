@@ -58,9 +58,17 @@ void mplayer_stop(void);
 
 void mplayer_parse_cmd(void)
 {
-    if((mp_cmd_mode == MPLAYER_MODE_PASS) && !play){
-        /* don't do nothing too hard */
-        usleep(100);
+    if(mp_cmd_mode == MPLAYER_MODE_PASS) {
+        switch(play){
+        case 0:
+            /* don't do nothing too hard */
+            usleep(100);
+            break;
+        default:
+            continue_play_local();
+            break;
+        }
+        return;
     }
 
     pthread_mutex_lock(&mplayer_buf_mutex);

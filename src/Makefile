@@ -1,4 +1,5 @@
 CC=gcc
+LIBTOOL=$(LDIR)/bin/libtool
 IDIR =../include
 CFLAGS= -I$(IDIR) -Wall -Wextra -pedantic ## -Werror
 LDFLAGS= #-static
@@ -20,21 +21,8 @@ CFLAGS+=-I$(LIBINCLUDE)
 LDFLAGS+=-L$(LIBBIN)
 
 LIBS += -lmpg123
-MPG123PATH=../lib/mpg123-1.22.4/src/libmpg123
-CFLAGS += -I$(MPG123PATH)
-LDFLAGS += -L$(MPG123PATH)
-
 LIBS += -lao
-LIBAOINCL=../lib/libao-1.2.0/include
-CFLAGS += -I$(LIBAOINCL)
-LIBAOBIN=../lib/libao-1.2.0/src
-LDFLAGS += -L$(LIBAOBIN)
-
-LIBS += -lcurl
-CURLINCL=../lib/curl-7.46.0/include
-CFLAGS += -I$(CURLINCL)
-CURLBIN=../lib/curl-7.46.0/src
-LDFLAGS += -L$(CURLBIN)
+## LIBS += -lcurl
 
 ## Generic rules
 ## Build object files as non executable
