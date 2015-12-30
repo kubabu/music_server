@@ -211,20 +211,20 @@ void json_mp3(int cfd, const char *path)
 
         swrite(cfd, "{\"path\":\"");
         swrite(cfd, path);
+        swrite(cfd, "\",\"title\":\"");
         if(v2->title != NULL && v2->title->fill) {
-            swrite(cfd, "\",\"title\":\"");
             write(cfd, v2->title->p, v2->title->fill);
         }
+        swrite(cfd, "\",\"artist\":\"");
         if(v2->artist != NULL && v2->artist->fill) {
-            swrite(cfd, "\",\"artist\":\"");
             write(cfd, v2->artist->p, v2->artist->fill);
         }
+        swrite(cfd, "\",\"year\":\"");
         if(v2->year != NULL && v2->year->fill) {
-            swrite(cfd, "\",\"year\":\"");
             write(cfd, v2->year->p, v2->year->fill);
         }
+        swrite(cfd, "\",\"genre\":\"");
         if(v2->genre != NULL && v2->genre->fill) {
-            swrite(cfd, "\",\"genre\":\"");
             write(cfd, v2->genre->p, v2->genre->fill);
         }
         swrite(cfd, "\"}");
