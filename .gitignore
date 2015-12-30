@@ -2,7 +2,7 @@
 *.elf
 *.o
 bin/
-mp3s/*
+mp3s/*.mp3
 lib/curl*
 lib/libao*
 lib/mpg123*
