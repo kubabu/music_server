@@ -1,4 +1,4 @@
 libasound2-dev
 libao-dev
-mpg123-dev
+libmpg123-dev
 libcurl4-gnutls-dev
