@@ -22,7 +22,7 @@ LDFLAGS+=-L$(LIBBIN)
 
 LIBS += -lmpg123
 LIBS += -lao
-## LIBS += -lcurl
+LIBS += -lcurl
 
 ## Generic rules
 ## Build object files as non executable

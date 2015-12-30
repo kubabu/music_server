@@ -10,16 +10,11 @@
 
 #include  "controls.h"
 #include  "mplayer.h"
+#include  "mplayer_internals.h"
 #include  "utils.h"
 
 
-#define LIBPATH         "../lib/bin/"
-#define PLAYER_PATH     LIBPATH"mpg123p"
 #define MUSIC_ROOT      "../mp3s/"
-#define MUSIC_SAMPLE    "Tracy.mp3"
-#define MUSIC_PATH      MUSIC_ROOT MUSIC_SAMPLE
-#define COMMAND         "-C"
-
 
 #define BITS                8
 #define MP_COMMAND_MAX_LEN  512
@@ -50,12 +45,6 @@ static ao_sample_format format;
 static int driver;
 static size_t done;
 
-
-void stop_play_local(void);
-int continue_play_local(void);
-int play_locally(char *path);
-void mplayer_pause(void);
-void mplayer_stop(void);
 
 void mplayer_parse_cmd(void)
 {
