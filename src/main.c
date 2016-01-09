@@ -290,6 +290,7 @@ int main(int argc, char *argv[])
 
     signal(SIGQUIT, &s_safe_exit);
     signal(SIGINT, &s_safe_exit);
+    signal(SIGPIPE, SIG_IGN);
 
     pthread_mutex_init(&mx, NULL);
 
