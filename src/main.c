@@ -50,7 +50,7 @@ int client_close(int cid)
     return 0;
 }
 
-void ct_close(int cid)
+void client_thread_close(int cid)
 {
     if(st.verbose) {
         client_t *c = clbuf[cid];
@@ -164,7 +164,7 @@ void *client_thread(void *cln)
         printf("[%s] Request from IP %s port %d [client %d {%d}] failed to authenticate\n",
                timestamp(st.tmr_buf), inet_ntoa(c->caddr.sin_addr),
                c->caddr.sin_port, cid, (int)pthread_self());
-        ct_close(cid);
+        client_thread_close(cid);
     }
 
     /* Log info */
@@ -251,7 +251,7 @@ void *client_thread(void *cln)
         }
     }
 
-    ct_close(cid);
+    client_thread_close(cid);
 
     return 0;
 }
